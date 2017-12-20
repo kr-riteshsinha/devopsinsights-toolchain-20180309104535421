@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util.xsd">
+
+	
+	<bean id="registryManager" class="com.ibm.proc.integration.RegistryManager" factory-method="getInstance">
+	  <property name="actionRegistry">
+        <map>
+            <entry key="create_rfx" value-ref="createRfx"/>
+            <entry key="create_po" value-ref="createPo"/>
+        </map>
+     </property>
+	</bean>
+	<!--  START - CREATE PO -->
+	<bean id="createPo" class="com.ibm.proc.integration.RegistryManager.ConfigEntity">
+		<property name="converter" ref="poMessageResponseToEntityConverter"/>
+		<property name="action" ref="poCreateAction"/>
+	</bean>
+
+	<bean id="poMessageResponseToEntityConverter" class="com.ibm.proc.integration.dummy.po.converter.PoMessageResponseToEntityConverter"/>
+
+	<bean id="poCreateAction" class="com.ibm.proc.integration.action.impl.BaseCreateActionImpl">
+		<property name="service" ref="poService"/>	
+	</bean>
+
+	<bean id="poService" class="com.ibm.proc.integration.dummy.po.service.PoService"/>
+	<!-- END - Create PO -->
+	
+	<bean id="createRfx" class="com.ibm.proc.integration.RegistryManager.ConfigEntity">
+		<property name="converter" ref="rfxMessageResponseToEntityConverter"/>
+		<property name="action" ref="rfxCreateAction"/>
+	</bean>
+	
+	<bean id="updateRfx" class="com.ibm.proc.integration.RegistryManager.ConfigEntity">
+		<property name="converter" ref="rfxMessageResponseToEntityConverter"/>
+		<property name="action" ref="rfxUpdateAction"/>
+	</bean>
+
+	<bean id="rfxMessageResponseToEntityConverter" class="com.ibm.proc.integration.emptoris.sourcing.converter.RFxMessageResponseToEntityConverter">
+		<property name="templateDetail">
+			<map>
+				<entry key="Temp1" value="1230" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="rfxCreateAction" class="com.ibm.proc.integration.action.impl.BaseCreateActionImpl">
+		<property name="service" ref="rfxService"/>	
+	</bean>
+	
+	<bean id="rfxUpdateAction" class="com.ibm.proc.integration.action.impl.BaseUpdateActionImpl">
+		<property name="service" ref="rfxService"/>	
+	</bean>
+
+
+	<bean id="rfxService" class="com.ibm.proc.integration.emptoris.sourcing.service.RFxService"/>
+
+
+	<bean id="integrationProcessor" class="com.ibm.proc.integration.IntegrationProcessor"> 
+		<property name="registryManager" ref="registryManager"/>
+	</bean>
+
+	
+</beans>
