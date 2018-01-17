@@ -5,7 +5,7 @@
 	<artifactId>orchestration</artifactId>
 	<packaging>war</packaging>
 	<version>1.0-SNAPSHOT</version>
-	<name>orchestration Maven Webapp</name>
+	<name>Orch Maven Webapp</name>
 	<url>http://maven.apache.org</url>
 	<properties>
 		<jdk.version>1.8</jdk.version>
@@ -38,11 +38,6 @@
 			</exclusions>
 		</dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>${jcl-over-slf4j.version}</version>
-		</dependency>
 
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -129,12 +124,18 @@
 			<artifactId>java-sdk</artifactId>
 			<version>3.5.3</version>
 		</dependency>
+
 		<dependency>
-			<groupId>org.twitter4j</groupId>
-			<artifactId>twitter4j-core</artifactId>
-			<version>4.0.3</version>
+			<groupId>org.springframework.amqp</groupId>
+			<artifactId>spring-rabbit</artifactId>
+			<version>2.0.1.RELEASE</version>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>4.0.2.RELEASE</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-client</artifactId>
@@ -145,15 +146,64 @@
 			<artifactId>fluent-hc</artifactId>
 			<version>4.5.3</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.ning/async-http-client -->
+		<dependency>
+			<groupId>com.ning</groupId>
+			<artifactId>async-http-client</artifactId>
+			<version>1.9.40</version>
+		</dependency>
+		<!-- logging related -->
+		<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
+		<!-- <dependency> <groupId>commons-logging</groupId> <artifactId>commons-logging</artifactId> 
+			<version>1.2</version> </dependency> -->
 		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.1</version>
+			<version>2.10.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${jcl-over-slf4j.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.jersey.contribs</groupId>
+			<artifactId>jersey-spring</artifactId>
+			<version>1.18.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-web</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-beans</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 	</dependencies>
 	<build>
-		<finalName>orchestration</finalName>
+		<finalName>Orchestration</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -178,18 +228,10 @@
 				</configuration>
 			</plugin>
 			<!-- Eclipse project -->
-		<!--  	<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<inherited>true</inherited>
-				<configuration>
-					<classpathContainers>
-						<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
-						<classpathContainer>org.eclipse.jdt.USER_LIBRARY/TOMCAT_6.0.14_LIBRARY</classpathContainer>
-					</classpathContainers>
-				</configuration>
-			</plugin>
--->
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-eclipse-plugin</artifactId> 
+				<inherited>true</inherited> <configuration> <classpathContainers> <classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer> 
+				<classpathContainer>org.eclipse.jdt.USER_LIBRARY/TOMCAT_6.0.14_LIBRARY</classpathContainer> 
+				</classpathContainers> </configuration> </plugin> -->
 			<!-- Set JDK Compiler Level -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -202,7 +244,7 @@
 			</plugin>
 			<!-- For Maven Tomcat Plugin -->
 			<!-- <plugin> <groupId>org.apache.tomcat.maven</groupId> <artifactId>tomcat7-maven-plugin</artifactId> 
-				<version>2.2</version> <configuration> <path>/orchestration</path> </configuration> 
+				<version>2.2</version> <configuration> <path>/smc</path> </configuration> 
 				</plugin> -->
 		</plugins>
 	</build>

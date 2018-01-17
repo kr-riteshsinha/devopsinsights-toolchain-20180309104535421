@@ -11,10 +11,10 @@
         http://www.springframework.org/schema/mvc
 		http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd">
 
-	<context:component-scan base-package="com.ibm.rca" />
-	<context:component-scan base-package="com.ibm.proc.bot"/>
-	<context:component-scan base-package="com.ibm.proc.bot.controller"/>
-	<context:component-scan base-package="com.ibm.proc.bot.service"/>
+	<mvc:annotation-driven />
+
+	<context:component-scan base-package="com.ibm.tfs.service" />
+	<context:component-scan base-package="com.ibm.tfs.service.controller"/>
 	
  	<bean
 		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
@@ -34,7 +34,7 @@
 	<!-- <mvc:resources location="/WEB-INF/static/" mapping="/static/**" /> -->
 	
 	
-	<import resource="integration-context.xml"/>
+	<!-- <import resource="integration-context.xml"/> -->
  
  	 
 </beans>

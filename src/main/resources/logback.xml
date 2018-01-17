@@ -9,12 +9,11 @@
 	    </layout>
 	</appender>
 
-	<logger name="com.ibm.rca.controller" level="info"
-		additivity="true">
+	<logger name="com.ibm.tfs" level="debug" additivity="true">
 		<appender-ref ref="STDOUT" />
 	</logger>
 
-	<root level="info">
+	<root level="debug">
 		<appender-ref ref="STDOUT" />
 	</root>
 
