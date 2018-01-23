@@ -47,6 +47,9 @@ public class TFSConfig {
 
 	@Value("${wdsendpoint}")
 	private String wdsEndPoint;
+	
+	@Value("${wdsversiondate}")
+	private String wdsVersionDate;
 
 	public String getSttUsername() {
 		return sttUsername;
@@ -142,6 +145,14 @@ public class TFSConfig {
 
 	public void setWdsEndPoint(String wdsEndPoint) {
 		this.wdsEndPoint = wdsEndPoint;
+	}
+
+	public String getWdsVersionDate() {
+		return wdsVersionDate;
+	}
+
+	public void setWdsVersionDate(String versionDate) {
+		this.wdsVersionDate = versionDate;
 	}
 
 	@Bean
