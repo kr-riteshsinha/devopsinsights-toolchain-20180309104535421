@@ -1,8 +1,5 @@
 package com.ibm.tfs.service.watson;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +33,6 @@ public class TFSOrchWCSService {
 	public TFSDataModel getWCSResponse(TFSDataModel tfsDataModel, com.ibm.tfs.service.model.wcs.Context context) {
 		logger.info("TFS Orchestration WCS Service - begin");
 		
-		// TODO: call WCS
 		username = tfsConfig.getWcsUsername();
 		password = tfsConfig.getWcsPassword();
 		endpoint = tfsConfig.getWcsEndPoint();
@@ -51,7 +47,6 @@ public class TFSOrchWCSService {
 				service.setUsernameAndPassword(username, password);
 			}
 			InputData input = new InputData.Builder(tfsDataModel.getWcsRequest()).build();
-			// TODO: set context if present --> Context context = new Context().
 			if (context != null) {
 				String contextString = gson.toJson(context);
 				wcsContext = new ObjectMapper().readValue(contextString, Context.class);

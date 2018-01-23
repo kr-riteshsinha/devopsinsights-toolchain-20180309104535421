@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class System {
 	private String branch_exited;
 
-	private String dialog_request_counter;
+	private int dialog_request_counter;
 
 	private _node_output_map _node_output_map;
 
@@ -14,7 +14,7 @@ public class System {
 
 	private String branch_exited_reason;
 
-	private String dialog_turn_counter;
+	private int dialog_turn_counter;
 
 	public String getBranch_exited() {
 		return branch_exited;
@@ -24,11 +24,11 @@ public class System {
 		this.branch_exited = branch_exited;
 	}
 
-	public String getDialog_request_counter() {
+	public int getDialog_request_counter() {
 		return dialog_request_counter;
 	}
 
-	public void setDialog_request_counter(String dialog_request_counter) {
+	public void setDialog_request_counter(int dialog_request_counter) {
 		this.dialog_request_counter = dialog_request_counter;
 	}
 
@@ -56,11 +56,11 @@ public class System {
 		this.branch_exited_reason = branch_exited_reason;
 	}
 
-	public String getDialog_turn_counter() {
+	public int getDialog_turn_counter() {
 		return dialog_turn_counter;
 	}
 
-	public void setDialog_turn_counter(String dialog_turn_counter) {
+	public void setDialog_turn_counter(int dialog_turn_counter) {
 		this.dialog_turn_counter = dialog_turn_counter;
 	}
 

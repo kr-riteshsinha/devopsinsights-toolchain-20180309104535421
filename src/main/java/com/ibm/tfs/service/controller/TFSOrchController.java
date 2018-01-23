@@ -3,12 +3,13 @@ package com.ibm.tfs.service.controller;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,7 +34,7 @@ public class TFSOrchController {
 	private static final Logger logger = LogManager.getLogger(TFSOrchController.class.getName());
 	
 	// Map to maintain the session for a single call
-	private static Map<String, Context> sessionMap = new HashMap<>();
+	private static Map<String, Context> sessionMap = new ConcurrentHashMap<>();
 
 	@Autowired
 	TFSOrchSTTService tfsOrchSTTService;
@@ -50,6 +51,24 @@ public class TFSOrchController {
 	public String getMessage() {
 		logger.info("TFS Orchestration Service - status check!");
 		return "Welcome to TFS Orchestration Service";
+	}
+
+	/**
+	 * PUT method to remove the current context from the session map
+	 * @return
+	 */
+	@RequestMapping(value = "/tfsOrchService/disconnect/{hostname}", method = RequestMethod.PUT)
+	public String disconnectSession(@PathVariable("hostname") String hostname) {
+		logger.info("TFS Orchestration Service - disconnect session!");
+		String response;
+		Context remove = sessionMap.remove(hostname);
+		if (remove == null) {
+			response = "There was no session associated with the hostname " + hostname;
+		} else {
+			response = "The session associated with the hostname " + hostname + " has been removed";
+		}
+		
+		return response;
 	}
 
 	/**
@@ -109,7 +128,7 @@ public class TFSOrchController {
 				
 				if (tfsDataModel.getWcsRequest() != null) {
 					// get caller context if available in session map
-					Context context = sessionMap.get(tfsDataModel.getAgentId());
+					Context context = sessionMap.get(tfsDataModel.getHostName());
 					tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 					
 					if (tfsDataModel.getWcsResponse() != null) {
@@ -119,7 +138,7 @@ public class TFSOrchController {
 						if (wcsResponse != null) {
 							// TODO : maintain WCS context in a map for a given caller
 							context = wcsResponse.getContext();
-							sessionMap.put(tfsDataModel.getAgentId(), context);
+							sessionMap.put(tfsDataModel.getHostName(), context);
 							
 							Output output = wcsResponse.getOutput();
 							if (output.getAction() != null && output.getAction().getDiscovery() != null && output.getAction().getDiscovery().getQuery_text() != null) {
