@@ -1,5 +1,7 @@
 package com.ibm.tfs.service.watson;
 
+import java.util.Date;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +11,8 @@ import com.google.gson.Gson;
 import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.watson.developer_cloud.discovery.v1.Discovery;
-import com.ibm.watson.developer_cloud.discovery.v1.model.query.QueryRequest;
-import com.ibm.watson.developer_cloud.discovery.v1.model.query.QueryResponse;
+import com.ibm.watson.developer_cloud.discovery.v1.model.QueryOptions;
+import com.ibm.watson.developer_cloud.discovery.v1.model.QueryResponse;
 
 @Service("tfsOrchWDSService")
 public class TFSOrchWDSService {
@@ -22,7 +24,9 @@ public class TFSOrchWDSService {
 	private String collectionId;
 	private String endpoint;
 	private String versionDate;
-	
+
+	private long startTime;
+
 	@Autowired
 	private TFSConfig tfsConfig;
 
@@ -31,36 +35,39 @@ public class TFSOrchWDSService {
 
 	public TFSDataModel getWDSResponse(TFSDataModel tfsDataModel) {
 		logger.info("TFS Orchestration WDS Service - begin");
-		
+
 		collectionId = tfsConfig.getWdsCollectionId();
 		environmentId = tfsConfig.getWdsEnvironmentId();
 		username = tfsConfig.getWdsUsername();
 		password = tfsConfig.getWdsPassword();
 		endpoint = tfsConfig.getWdsEndPoint();
 		versionDate = tfsConfig.getWdsVersionDate();
-		
+
 		try {
 			Discovery discovery = new Discovery(versionDate);
 			discovery.setEndPoint(endpoint);
 			discovery.setUsernameAndPassword(username, password);
-			QueryRequest.Builder queryBuilder = new QueryRequest.Builder(environmentId, collectionId);
-			queryBuilder.query(tfsDataModel.getWdsRequest());
+			QueryOptions.Builder queryOptions = new QueryOptions.Builder(environmentId, collectionId);
+			queryOptions.addReturnField("id").addReturnField("result_metadata").addReturnField("metadata");
+			queryOptions.count(1);
+			queryOptions.query(tfsDataModel.getWdsRequest());
 
 			logger.info("Sending the quey to discovery");
-			QueryResponse results = discovery.query(queryBuilder.build()).execute();
-
+			startTime = new Date().getTime();
+			QueryResponse results = discovery.query(queryOptions.build()).execute();
+			System.out.println("Time(ms) for STT SessionStatus API - " + (new Date().getTime() - startTime));
 			if (results != null) {
 				logger.debug("Response from WDS : " + results);
 				String json = new Gson().toJson(results);
 				logger.debug("Response in JSON : " + json);
 				tfsDataModel.setWdsResponse(json);
 			}
-			
+
 		} catch (Exception e) {
 			logger.error("Error in getting the WDS response. " + e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		return tfsDataModel;
 	}
 }

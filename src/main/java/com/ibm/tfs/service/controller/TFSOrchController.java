@@ -32,8 +32,8 @@ import com.ibm.tfs.service.watson.TFSOrchWDSService;
 public class TFSOrchController {
 
 	private static final Logger logger = LogManager.getLogger(TFSOrchController.class.getName());
-	
-	// Map to maintain the session for a single call
+
+	// Map to maintain the session for a single call, map of hostname-WCSContext
 	private static Map<String, Context> sessionMap = new ConcurrentHashMap<>();
 
 	@Autowired
@@ -45,6 +45,7 @@ public class TFSOrchController {
 
 	/**
 	 * GET method to test the service availability
+	 * 
 	 * @return
 	 */
 	@RequestMapping(value = "/tfsOrchService/status", method = RequestMethod.GET)
@@ -55,6 +56,7 @@ public class TFSOrchController {
 
 	/**
 	 * PUT method to remove the current context from the session map
+	 * 
 	 * @return
 	 */
 	@RequestMapping(value = "/tfsOrchService/disconnect/{hostname}", method = RequestMethod.PUT)
@@ -67,13 +69,12 @@ public class TFSOrchController {
 		} else {
 			response = "The session associated with the hostname " + hostname + " has been removed";
 		}
-		
+
 		return response;
 	}
 
 	/**
-	 * POST method to post response from Mediation component to STT, WCS and WDS
-	 * And return the populated TFSDataModel with responses from above services
+	 * POST method to post response from Mediation component to STT, WCS and WDS And return the populated TFSDataModel with responses from above services
 	 * 
 	 * @param tfsDataModel
 	 * @return tfsDataModel
@@ -84,6 +85,9 @@ public class TFSOrchController {
 
 		logger.info("TFS Orchestration Service - POST - begin");
 		String response = null;
+		Context context = null;
+		String consolidatedWcsResponse = "";
+		String consolidatedWdsResponse = "";
 		// Build the response from STT, WCS and WDS
 		try {
 			TFSDataModel tfsDataModel = new TFSDataModel();
@@ -91,14 +95,14 @@ public class TFSOrchController {
 			tfsDataModel = mapper.readValue(json, TFSDataModel.class);
 
 			// TODO: get the responses from STT, WCS and WDS
-			
+
 			// TEST code: ideally tfsDataModel would have the byte[] populated
 			File sampleAudioFile = new File("C:\\work\\Cognitive\\TFS\\sample.wav");
-//			InputStream fis = new FileInputStream(sampleAudioFile);
-//			byte[] sampleBytes = new byte[(int) sampleAudioFile.length()];
-//			fis.read(sampleBytes, 0, sampleBytes.length);
-//			fis.close();
-			
+			// InputStream fis = new FileInputStream(sampleAudioFile);
+			// byte[] sampleBytes = new byte[(int) sampleAudioFile.length()];
+			// fis.read(sampleBytes, 0, sampleBytes.length);
+			// fis.close();
+
 			FileInputStream in = new FileInputStream(sampleAudioFile);
 			BufferedInputStream bis = new BufferedInputStream(in);
 			byte[] sampleBytes = new byte[bis.available()];
@@ -110,7 +114,7 @@ public class TFSOrchController {
 			if (tfsDataModel.getSttRequest() != null) {
 				tfsOrchSTTService.getSTTResponse(tfsDataModel);
 			}
-			
+
 			if (tfsDataModel.getSttResponse() != null) {
 				ObjectMapper sttResponseMapper = new ObjectMapper();
 				STTResponse sttResponse = sttResponseMapper.readValue(tfsDataModel.getSttResponse(), STTResponse.class);
@@ -120,48 +124,47 @@ public class TFSOrchController {
 						if ("true".equalsIgnoreCase(result.getIsFinal())) {
 							Alternatives[] alternatives = result.getAlternatives();
 							for (Alternatives alternative : alternatives) {
-								tfsDataModel.setWcsRequest(alternative.getTranscript());
-							}
-						}
-					}
-				}
-				
-				if (tfsDataModel.getWcsRequest() != null) {
-					// get caller context if available in session map
-					Context context = sessionMap.get(tfsDataModel.getHostName());
-					tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
-					
-					if (tfsDataModel.getWcsResponse() != null) {
-						ObjectMapper wcsResponseMapper = new ObjectMapper();
-						WCSResponse wcsResponse = wcsResponseMapper.readValue(tfsDataModel.getWcsResponse(), WCSResponse.class);
-						
-						if (wcsResponse != null) {
-							// TODO : maintain WCS context in a map for a given caller
-							context = wcsResponse.getContext();
-							sessionMap.put(tfsDataModel.getHostName(), context);
-							
-							Output output = wcsResponse.getOutput();
-							if (output.getAction() != null && output.getAction().getDiscovery() != null && output.getAction().getDiscovery().getQuery_text() != null) {
-								// Query WDS
-								tfsDataModel.setWdsRequest(output.getAction().getDiscovery().getQuery_text());
+								if (alternative.getTranscript() != null) {
+									tfsDataModel.setWcsRequest(alternative.getTranscript());
 
-								tfsOrchWDSService.getWDSResponse(tfsDataModel);
-							}
+									// get caller context if available in session map
+									context = sessionMap.get(tfsDataModel.getHostName());
+									tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 
-							/*
-							if (tfsDataModel.getWdsResponse() != null) {
-								ObjectMapper wdsResponseMapper = new ObjectMapper();
-								WDSResponse wdsResponse = wdsResponseMapper.readValue(tfsDataModel.getWdsResponse(), WDSResponse.class);
-								response = wdsResponseMapper.writeValueAsString(wdsResponse);
-							} else {
-								response = wcsResponseMapper.writeValueAsString(wcsResponse);
+									if (tfsDataModel.getWcsResponse() != null) {
+										consolidatedWcsResponse += tfsDataModel.getWcsResponse();
+										ObjectMapper wcsResponseMapper = new ObjectMapper();
+										WCSResponse wcsResponse = wcsResponseMapper.readValue(tfsDataModel.getWcsResponse(), WCSResponse.class);
+
+										if (wcsResponse != null) {
+											context = wcsResponse.getContext();
+											sessionMap.put(tfsDataModel.getHostName(), context);
+
+											Output output = wcsResponse.getOutput();
+											if (output.getAction() != null && output.getAction().getDiscovery() != null
+											        && output.getAction().getDiscovery().getQuery_text() != null) {
+												// Query WDS
+												tfsDataModel.setWdsRequest(output.getAction().getDiscovery().getQuery_text());
+
+												tfsOrchWDSService.getWDSResponse(tfsDataModel);
+
+												consolidatedWdsResponse += tfsDataModel.getWdsResponse();
+											}
+										}
+									}
+								}
 							}
-							*/
 						}
 					}
 				}
 			}
-			
+
+			tfsDataModel.setWcsResponse(consolidatedWcsResponse);
+			tfsDataModel.setWdsResponse(consolidatedWdsResponse);
+
+			// TODO: this will be removed later. currently the STT request json looks ugly when printed
+			tfsDataModel.setSttRequest(null);
+
 			response = mapper.writeValueAsString(tfsDataModel);
 
 			logger.info("TFS Orchestration Service - processing done");
@@ -171,5 +174,4 @@ public class TFSOrchController {
 		}
 		return response;
 	}
-
 }

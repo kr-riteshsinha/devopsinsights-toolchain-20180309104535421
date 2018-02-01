@@ -1,5 +1,7 @@
 package com.ibm.tfs.service.watson;
 
+import java.util.Date;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +23,11 @@ public class TFSOrchWCSService {
 	private static final Logger logger = LogManager.getLogger(TFSOrchWCSService.class.getName());
 	private String username;
 	private String password;
-	private String endpoint;
+//	private String endpoint;
 	private String workspaceId;
-	
+
+	private long startTime;
+
 	@Autowired
 	private TFSConfig tfsConfig;
 
@@ -32,16 +36,16 @@ public class TFSOrchWCSService {
 
 	public TFSDataModel getWCSResponse(TFSDataModel tfsDataModel, com.ibm.tfs.service.model.wcs.Context context) {
 		logger.info("TFS Orchestration WCS Service - begin");
-		
+
 		username = tfsConfig.getWcsUsername();
 		password = tfsConfig.getWcsPassword();
-		endpoint = tfsConfig.getWcsEndPoint();
+//		endpoint = tfsConfig.getWcsEndPoint();
 		workspaceId = tfsConfig.getWcsWorkspaceId();
-		
+
 		try {
 			Gson gson = new Gson();
 			Context wcsContext = null;
-			
+
 			Conversation service = new Conversation(Conversation.VERSION_DATE_2017_05_26);
 			if (username != null && password != null) {
 				service.setUsernameAndPassword(username, password);
@@ -52,20 +56,22 @@ public class TFSOrchWCSService {
 				wcsContext = new ObjectMapper().readValue(contextString, Context.class);
 			}
 			MessageOptions options = new MessageOptions.Builder(workspaceId).input(input).context(wcsContext).build();
-			
+
+			startTime = new Date().getTime();
 			MessageResponse results = service.message(options).execute();
+			System.out.println("Time(ms) for WCS API - " + (new Date().getTime()-startTime));
 			if (results != null) {
 				logger.debug("Response from WCS : " + results);
 				String json = gson.toJson(results);
 				logger.debug("Response in JSON : " + json);
 				tfsDataModel.setWcsResponse(json);
 			}
-			
+
 		} catch (Exception e) {
 			logger.error("Error in getting the WCS response. " + e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		return tfsDataModel;
 	}
 }

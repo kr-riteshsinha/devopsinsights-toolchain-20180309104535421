@@ -160,4 +160,26 @@ public class TFSConfig {
 		return new PropertySourcesPlaceholderConfigurer();
 	}
 
+	@Value("${tfs.orch.service.username}")
+	private String tfsOrchServiceUsername;
+
+	@Value("${tfs.orch.service.password}")
+	private String tfsOrchServicePassword;
+
+	public String getTfsOrchServiceUsername() {
+		return tfsOrchServiceUsername;
+	}
+
+	public void setTfsOrchServiceUsername(String tfsOrchServiceUsername) {
+		this.tfsOrchServiceUsername = tfsOrchServiceUsername;
+	}
+
+	public String getTfsOrchServicePassword() {
+		return tfsOrchServicePassword;
+	}
+
+	public void setTfsOrchServicePassword(String tfsOrchServicePassword) {
+		this.tfsOrchServicePassword = tfsOrchServicePassword;
+	}
+	
 }
