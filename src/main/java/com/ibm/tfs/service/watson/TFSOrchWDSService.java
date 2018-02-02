@@ -55,7 +55,7 @@ public class TFSOrchWDSService {
 			logger.info("Sending the quey to discovery");
 			startTime = new Date().getTime();
 			QueryResponse results = discovery.query(queryOptions.build()).execute();
-			System.out.println("Time(ms) for STT SessionStatus API - " + (new Date().getTime() - startTime));
+			System.out.println("Time(ms) for WDS API - " + (new Date().getTime() - startTime));
 			if (results != null) {
 				logger.debug("Response from WDS : " + results);
 				String json = new Gson().toJson(results);

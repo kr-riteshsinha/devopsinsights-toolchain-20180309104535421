@@ -34,14 +34,14 @@
 		<url-pattern>/tfsOrchService/*</url-pattern>
 	</filter-mapping>
 	
-<!-- 	<security-constraint>
+	<security-constraint>
         <web-resource-collection>
             <web-resource-name>orchestration</web-resource-name>
             <url-pattern>/*</url-pattern>
         </web-resource-collection>
         <user-data-constraint>
-            Needed for our application to respond to https requests
+            <!-- Needed for our application to respond to https requests -->
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
-    </security-constraint> -->
+    </security-constraint>
 </web-app>
