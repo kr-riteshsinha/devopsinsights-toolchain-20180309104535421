@@ -1,8 +1,12 @@
 package com.ibm.tfs.service.model;
 
+import java.io.InputStream;
+import java.io.Serializable;
 import java.util.Map;
 
-public class TFSDataModel {
+import com.google.gson.GsonBuilder;
+
+public class TFSDataModel implements Serializable{
 
 	private String agentId;
 	private String channelId;
@@ -13,6 +17,8 @@ public class TFSDataModel {
 	private String wdsResponse;
 	private String wcsRequest;
 	private String wdsRequest;
+	//private InputStream sttRequestStream;
+
 	private Map<Object, Object> propertiesMap;
 	
 	public TFSDataModel() {
@@ -111,5 +117,19 @@ public class TFSDataModel {
 
 	public void setPropertiesMap(Map<Object, Object> propertiesMap) {
 		this.propertiesMap = propertiesMap;
+	}
+	
+//	public InputStream getSttRequestStream() {
+//		return sttRequestStream;
+//	}
+//
+//	public void setSttRequestStream(InputStream sttRequestStream) {
+//		this.sttRequestStream = sttRequestStream;
+//	}
+	@Override
+	public String toString() {
+		return getClass().getName() + " "
+				+ new GsonBuilder().setPrettyPrinting().create().toJson(this);
+
 	}
 }

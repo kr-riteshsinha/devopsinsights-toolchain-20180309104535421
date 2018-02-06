@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletResponse;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -20,46 +23,57 @@ import org.apache.commons.io.IOUtils;
 
 import com.ibm.utility.WavEncoderStream;
 
-@WebServlet("/sttListener")
-@MultipartConfig
+@WebServlet(urlPatterns ="/sttListener", asyncSupported=true)
 public class STTController extends HttpServlet{
 
+	HashMap<String,SpeectToTextWs> hashmap = new HashMap<String,SpeectToTextWs>();
 	private static int increment = 0;
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-		 DataInputStream in = 
-	                new DataInputStream((InputStream)req.getInputStream());
-	         
-		 byte[] bytes = IOUtils.toByteArray(in);
-	        String text = in.readUTF();
-
-	        
-	        AudioFormat inAudioFormat = new AudioFormat(16000, 16, 1, true, false);
-			
-	        
-			AudioInputStream audioIn = new AudioInputStream(new ByteArrayInputStream(bytes), inAudioFormat, bytes.length);
-			
-			OutputStream encoder = new WavEncoderStream("c:\\audioStore\\speech_"+increment+++".wav", 16000, 2, 1);
-			encoder.write(bytes);
-			
-	        
-	        System.out.println(text);
-	        String message;
-	        try {
-	            message = "100 ok";
-	        } catch (Throwable t) {
-	            message = "200 " + t.toString();
-	        }
-	        resp.setContentType("text/plain");
-	        resp.setContentLength(message.length());
-	        PrintWriter out = resp.getWriter();;
-	        out.println(message);
-	        in.close();
-	        out.close();
-	        out.flush();
+		
+		final AsyncContext asyncContext = req.getAsyncContext();
+		
+//		asyncContext.start(new Runnable() {
+//	         public void run() {
+//	            String param = asyncContext.getRequest().getParameter("param");
+//	            ServletResponse response = asyncContext.getResponse();
+//	            /* ... print to the response ... */
+//	            asyncContext.complete();
+//	         }
+//		};
+		
+//		 DataInputStream in = 
+//	                new DataInputStream((InputStream)req.getInputStream());
+//	         
+//		 byte[] bytes = IOUtils.toByteArray(in);
+//	        String text = in.readUTF();
+//
+//	        
+//	        AudioFormat inAudioFormat = new AudioFormat(16000, 16, 1, true, false);
+//			
+//	        
+//			AudioInputStream audioIn = new AudioInputStream(new ByteArrayInputStream(bytes), inAudioFormat, bytes.length);
+//			
+//			OutputStream encoder = new WavEncoderStream("c:\\audioStore\\speech_"+increment+++".wav", 16000, 2, 1);
+//			encoder.write(bytes);
+//			
+//	        
+//	        System.out.println(text);
+//	        String message;
+//	        try {
+//	            message = "100 ok";
+//	        } catch (Throwable t) {
+//	            message = "200 " + t.toString();
+//	        }
+//	        resp.setContentType("text/plain");
+//	        resp.setContentLength(message.length());
+//	        PrintWriter out = resp.getWriter();;
+//	        out.println(message);
+//	        in.close();
+//	        out.close();
+//	        out.flush();
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
