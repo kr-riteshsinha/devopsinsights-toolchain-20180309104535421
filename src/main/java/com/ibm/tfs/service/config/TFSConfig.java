@@ -47,6 +47,9 @@ public class TFSConfig {
 
 	@Value("${wdsendpoint}")
 	private String wdsEndPoint;
+	
+	@Value("${wdsversiondate}")
+	private String wdsVersionDate;
 
 	public String getSttUsername() {
 		return sttUsername;
@@ -144,9 +147,39 @@ public class TFSConfig {
 		this.wdsEndPoint = wdsEndPoint;
 	}
 
+	public String getWdsVersionDate() {
+		return wdsVersionDate;
+	}
+
+	public void setWdsVersionDate(String versionDate) {
+		this.wdsVersionDate = versionDate;
+	}
+
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertyConfigIn() {
 		return new PropertySourcesPlaceholderConfigurer();
 	}
 
+	@Value("${tfs.orch.service.username}")
+	private String tfsOrchServiceUsername;
+
+	@Value("${tfs.orch.service.password}")
+	private String tfsOrchServicePassword;
+
+	public String getTfsOrchServiceUsername() {
+		return tfsOrchServiceUsername;
+	}
+
+	public void setTfsOrchServiceUsername(String tfsOrchServiceUsername) {
+		this.tfsOrchServiceUsername = tfsOrchServiceUsername;
+	}
+
+	public String getTfsOrchServicePassword() {
+		return tfsOrchServicePassword;
+	}
+
+	public void setTfsOrchServicePassword(String tfsOrchServicePassword) {
+		this.tfsOrchServicePassword = tfsOrchServicePassword;
+	}
+	
 }
