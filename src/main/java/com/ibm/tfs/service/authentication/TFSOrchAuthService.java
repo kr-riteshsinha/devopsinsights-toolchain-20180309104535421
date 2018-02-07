@@ -8,6 +8,7 @@ public class TFSOrchAuthService {
 
 	public boolean authenticate(String credential, String configUsername, String configPassword) {
 		if (null == credential) {
+			System.out.println("Authorization Header is missing");
 			return false;
 		}
 		// header value format will be "Basic encodedstring" for Basic authentication. Example "Basic YWRtaW46YWRtaW4="

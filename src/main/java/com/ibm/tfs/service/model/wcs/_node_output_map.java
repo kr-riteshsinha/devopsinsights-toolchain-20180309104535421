@@ -7,18 +7,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class _node_output_map {
 	
 	@JsonProperty("Welcome")
-	private String[] Welcome;
+	private String[] welcome;
 
 	public String[] getWelcome() {
-		return Welcome;
+		return welcome;
 	}
 
 	public void setWelcome(String[] Welcome) {
-		this.Welcome = Welcome;
+		this.welcome = Welcome;
 	}
 
 	@Override
 	public String toString() {
-		return "_node_output_map [Welcome = " + Welcome + "]";
+		return "_node_output_map [welcome = " + welcome + "]";
 	}
 }

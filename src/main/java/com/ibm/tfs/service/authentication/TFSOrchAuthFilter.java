@@ -42,6 +42,7 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filter) throws IOException, ServletException {
+		System.out.println("AuthFilter - Begin");
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 			String authCredentials = httpServletRequest.getHeader(AUTHENTICATION_HEADER);
@@ -51,8 +52,10 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 			boolean authenticationStatus = tfsOrchAuthService.authenticate(authCredentials, configUsername, configPassword);
 
 			if (authenticationStatus) {
+				System.out.println("Auth successful");
 				filter.doFilter(request, response);
 			} else {
+				System.out.println("Auth failure");
 				if (response instanceof HttpServletResponse) {
 					HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 					httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

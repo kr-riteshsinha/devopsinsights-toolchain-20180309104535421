@@ -1,8 +1,11 @@
 package com.ibm.tfs.service.model.wds;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Metadata {
 	private String title;
 
+	@JsonProperty("filename")
 	private String link;
 
 	public String getTitle() {
