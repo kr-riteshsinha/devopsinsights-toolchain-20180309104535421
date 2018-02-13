@@ -26,6 +26,9 @@ public class TFSContextBridge implements TFSConfigService, ApplicationContextAwa
 
 	}
 
+	public static TFSOrchController getTFSOrchController() {
+		return applicationContext.getBean(TFSOrchController.class);
+	}
 	@Override
 	public TFSConfig getTFSConfig() {
 		return tfsConfig;

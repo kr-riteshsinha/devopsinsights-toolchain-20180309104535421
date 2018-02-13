@@ -71,11 +71,13 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 		//	agentVoice = agentVoice+builder.toString();
 			this._transcript.setSttResponse(agentVoice);
 			_messageHandler.handleMessage(this._transcript);
+			agentVoice = null;
 		}
 		if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length > 10) {
 			//	agentVoice = agentVoice+builder.toString();
 			this._transcript.setSttResponse(operatorVoice);
 				_messageHandler.handleMessage(this._transcript);
+				operatorVoice = null;
 			}
 //		
 //		if (_messageHandler != null) {

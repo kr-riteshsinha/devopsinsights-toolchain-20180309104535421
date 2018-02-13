@@ -138,13 +138,10 @@ public class OrchWebSocket {
 				@Override
 				public void handleMessage(TFSDataModel model) {
 					synchronized (msgHandler) {
-						try {
-							if (model.getSttResponse() != null && session.isOpen()) {
-								sessionMapper.getWsSession().getBasicRemote().sendText(model.getSttResponse());
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						postToOrcController(sessionMapper, model);
+//							if (model.getSttResponse() != null && session.isOpen()) {
+//								sessionMapper.getWsSession().getBasicRemote().sendText(model.getSttResponse());
+//							}
 					}
 				}
 			});
@@ -184,4 +181,8 @@ public class OrchWebSocket {
 		System.out.println("error");
 	}
 
+	public void postToOrcController(SessionMapper sessionMapper, TFSDataModel tfsDataMode) { 
+		
+		TFSContextBridge.getTFSOrchController().processSTTResponse(sessionMapper, tfsDataMode);
+	}
 }
