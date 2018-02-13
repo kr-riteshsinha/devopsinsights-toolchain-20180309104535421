@@ -1,17 +1,12 @@
 package com.ibm.tfs.service.model.speech_to_text;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -20,33 +15,39 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.gson.Gson;
+import com.ibm.tfs.service.model.SpeechDetail;
 import com.ibm.tfs.service.model.TFSDataModel;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeakerLabel;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechAlternative;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechResults;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechTimestamp;
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model.Transcript;
 
 public class RecognitionResultHandler implements MessageHandlerEX {
-	long _timerBeg = System.currentTimeMillis();
-	long _timerNow = System.currentTimeMillis();
-
+	private long _timerBeg = System.currentTimeMillis();
+	private long _timerNow = System.currentTimeMillis();
+	private List<String> operatorVoicelst = new ArrayList();
+	private TFSDataModel _transcript;
+	private Gson _gson = new Gson();
+	private int maxword=0;
+	private double forceCut;
+	protected MessageHandler _messageHandler;
+	private ConcurrentSkipListMap<Double, SpeechDetail> speaker1 = new ConcurrentSkipListMap<Double, SpeechDetail>();
+	private SortedMap<Double, SpeechDetail> speaker2;
+	private int currentSpeaker = -1;
+	private SpeechResults results =  null;
+	private String agentVoice = null;
+	private String operatorVoice = null;
 	
-	TFSDataModel _transcript;
-	Gson _gson = new Gson();
 	
-	static final int dindstep = 10; // initial size = 10;
-	ArrayList< ArrayList<Boolean> > dindex = new ArrayList< ArrayList<Boolean> >();
-	ArrayList< Double > tthr = new ArrayList<Double>();
-	double forceCut;
-
-	public RecognitionResultHandler(TFSDataModel transcript, double forceCut) {
-		_transcript = transcript;
-		this.forceCut = forceCut;
-		System.err.println("forceCut: " + forceCut);
-		
-		for (int i = 0; i < dindstep; i ++) {
-			dindex.add(new ArrayList<Boolean>());
-			tthr.add(new Double(0.0)); // Store thresholds to determine whether to do forceCut
-		}
-		disableSslVerification();
+	public List<String> conutineConverstation = new ArrayList();
+	
+	public RecognitionResultHandler(TFSDataModel tfsDataModel, int maxword) {
+		_transcript = tfsDataModel;
+		this.maxword = maxword;
 	}
 	
 	@Override
@@ -61,23 +62,33 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			return;
 		}
 //		System.err.println("DEBUG: received message is OK:" + jbuf);
-
+		processJson(jbuf, maxword);
+		
 		if (isConnectionReset) {
 			reset();
 		}
-		
-		if (_messageHandler != null) {
-			_messageHandler.handleMessage(jbuf, 0);
+		if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length > 10) {
+		//	agentVoice = agentVoice+builder.toString();
+			this._transcript.setSttResponse(agentVoice);
+			_messageHandler.handleMessage(this._transcript);
 		}
+		if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length > 10) {
+			//	agentVoice = agentVoice+builder.toString();
+			this._transcript.setSttResponse(operatorVoice);
+				_messageHandler.handleMessage(this._transcript);
+			}
+//		
+//		if (_messageHandler != null) {
+//			_messageHandler.handleMessage(jbuf, 0);
+//		}
 		
 	}
 	
-	String _url = null;
-	
-	public int setupHttpConnection(String url, String user, String pass) {
-		_url = url;
-		return 0;
+	private void processJson(String json,int maxword) {
+		 results = _gson.fromJson(json, SpeechResults.class);
+		getSpeechWords(results,this.speaker1);
 	}
+	
 	
 	private static void disableSslVerification() {
 	    try {
@@ -114,75 +125,135 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 	    }
 	}
 	
-	public synchronized int postSpeechRecognitionResult(String callid, int speechid, String speakertype, int speechstartingtime, int duration, String speechstring) {
-		String request = null;
-		try {
-			request = String.format("callID=%s&speechID=%s&speakerCode=%s&speechStartingTime=%d&durationTime=%d&speechString=%s", 
-						callid, speechid, speakertype, speechstartingtime, duration, URLEncoder.encode(speechstring, "UTF-8"));
-		} catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-		}
-		
-		int rc = 0;
-		HttpURLConnection conn = null;
-		PrintStream ps = null;
-		try {
-			conn = (HttpURLConnection) new URL(_url).openConnection();
-			conn.setRequestMethod("POST");
-			conn.setRequestProperty("Connection", "Keep-Alive");
-			conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF8");
-			conn.setDoInput(true);
-			conn.setDoOutput(true);
-			ps = new PrintStream(conn.getOutputStream());
-			ps.print(request);
-			ps.close();
-			System.err.println("sending=" + request);
-			
-			InputStream is = conn.getInputStream();
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String s;
-            while ((s = br.readLine()) != null) {
-            	System.out.printf("(RX %d byte)", s.length());
-//                System.out.println(s);
-            }
-        	System.out.printf("\n");
-            br.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			rc = -1;
-		} finally {
-			if (conn != null) {
-				conn.disconnect();
-			}
-			if (ps != null) {
-				ps.close();
-			}
-		}
-		return rc;
-	}
-	
-	static int _shared_speechid = 0; // ==========> STATIC (SHARED BY ALL INSTANCE) CHECK THREAD SAFETY !!!!!!!!!!!!!!!!!!
-	
-	synchronized public int getAndIncrementSpeechId() {
-		_shared_speechid += 1;
-		return _shared_speechid;
-	}
 	
 	private void reset() {
-		dindex.clear();
-		tthr.clear();
-		for (int i = 0; i < dindstep; i ++) {
-			dindex.add(new ArrayList<Boolean>());
-			tthr.add(new Double(0.0));
-		}
+		//TODO clear the buffer if connection is reset.
 	}
     
 	public static interface MessageHandler {
-        public void handleMessage(String message, int flag);
+       // public void handleMessage(String message, int flag);
+        public void handleMessage(TFSDataModel tfsDataModel);
     }
     public void addMessageHandler(MessageHandler lHandler) {
     	_messageHandler = lHandler;
     }
+	
+	public void makeSentence(SortedMap<Double,SpeechDetail> speechDetailmap, int oldSpeaker) {
+		
+		StringBuilder builder = new StringBuilder();
+		for (Double fromTime : speechDetailmap.keySet()) {
+				SpeechDetail speechDetail = speechDetailmap.get(fromTime);
+				if(speechDetail.getSpeakerId() != -1 && speechDetail.getSpeakerId() == oldSpeaker) {
+					builder.append(speechDetail.getWord()+ StringUtils.SPACE);
+					speechDetailmap.remove(fromTime);
+				}
+		}
+		if(oldSpeaker == 0 ) {
+			if(agentVoice == null) {
+				agentVoice = builder.toString();
+			}
+			if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length < 10) {
+				agentVoice = agentVoice+builder.toString();
+			} else{
+				if(agentVoice != null || builder != null) {
+					conutineConverstation.add("Speaker"+ oldSpeaker+": "+agentVoice);
+					agentVoice = builder.toString();
+				}
+			}
+				agentVoicelst.add(builder.toString());
+		} else {
+			if(operatorVoice == null) {
+				operatorVoice = builder.toString();
+			}
+			if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length < 10) {
+				operatorVoice = operatorVoice+builder.toString();
+			} else{
+				if(operatorVoice != null) {
+					conutineConverstation.add("Speaker"+ oldSpeaker+": "+operatorVoice);
+					operatorVoice = builder.toString();
+				}
+			}
+			operatorVoicelst.add(builder.toString());
+			
+		}
+	}
+	
+	
+	List<String> agentVoicelst = new ArrayList();
+	public List<String> getAgentVoicelst() {
+		return agentVoicelst;
+	}
 
-    protected MessageHandler _messageHandler;
+	public void setAgentVoicelst(List<String> agentVoicelst) {
+		this.agentVoicelst = agentVoicelst;
+	}
+
+	public List<String> getOperatorVoicelst() {
+		return operatorVoicelst;
+	}
+
+	public void setOperatorVoicelst(List<String> operatorVoicelst) {
+		this.operatorVoicelst = operatorVoicelst;
+	}
+
+	public void  getSpeechWords(SpeechResults speechResults,SortedMap<Double,SpeechDetail> speechDetailmap) {
+		if(speechDetailmap == null ) {
+			speechDetailmap = new TreeMap<Double, SpeechDetail>();
+		}
+		if (speechResults != null){
+			if (speechResults.getResults() != null && speechResults.getResults().size()>0){
+				for (Transcript t : speechResults.getResults()){
+					if (t!=null && t.getAlternatives()!= null && t.getAlternatives().size()>0){
+					//	if (t.isFinal()) {
+							for (SpeechAlternative sa : t.getAlternatives()){
+								if (sa!= null && sa.getTimestamps()!=null){
+									for (SpeechTimestamp st: sa.getTimestamps()){
+										if (st!= null) {
+											SpeechDetail detail = new SpeechDetail();
+											double ctmPart3 = st.getStartTime();
+											double ctmPart4 = st.getEndTime();
+											String ctmPart6 = st.getWord();
+
+											detail.setFrom(st.getStartTime());
+											detail.setEnd(st.getEndTime());
+											detail.setWord(st.getWord());
+											speechDetailmap.put(st.getStartTime(),detail);	
+										
+										}
+									}
+								}
+							}
+					}
+				}
+			}
+		}
+		
+		if (speechResults != null && speechResults.getSpeakerLabels() != null) {
+			//int currentSpeaker = -1;
+			for (SpeakerLabel speaker : speechResults.getSpeakerLabels()) {
+				double from = speaker.getFrom();
+				SpeechDetail speechDetail = speechDetailmap.get(from);
+				if (speechDetail != null) {
+					int speakar = speaker.getSpeaker();
+					if(currentSpeaker == -1) {
+						currentSpeaker =speakar ; // first time assigned the speaker 
+					}
+					if(currentSpeaker== speakar ) {
+						speechDetail.setSpeakerId(speaker.getSpeaker());
+					}else {
+						speechDetail.setSpeakerId(speaker.getSpeaker());
+						makeSentence(speechDetailmap,currentSpeaker);
+						currentSpeaker =speaker.getSpeaker();
+						// make sentence and remove the entry from hash map so that 
+					}
+				}
+
+			}
+
+		}
+	}
+
+
+
+
 }

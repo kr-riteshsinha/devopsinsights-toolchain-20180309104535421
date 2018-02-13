@@ -36,7 +36,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		public boolean word_confidence = true;
 		public boolean smart_formatting = true;
 		public boolean speaker_labels = true;
-		public String model="en-US_NarrowbandModel&x-watson-learning-opt-out=1&customization_id=14ed00ee-17ba-4320-85c9-d689d0614515";
+		//public String model="en-US_NarrowbandModel&x-watson-learning-opt-out=1&customization_id=14ed00ee-17ba-4320-85c9-d689d0614515";
 	};
 
 	public final int REQUEST_TIMEOUT = 20 * 1000; // ms
@@ -128,7 +128,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	public void onMessage(String msg) {
 		System.out.println("on message "+msg);
 		if(resultHandler == null) {
-			resultHandler = new RecognitionResultHandler(new TFSDataModel(),0.5);
+			resultHandler = new RecognitionResultHandler(new TFSDataModel(),5);
 		}
 		resultHandler.handleMessage(msg, false);
 	}

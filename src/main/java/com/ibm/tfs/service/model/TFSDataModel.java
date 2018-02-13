@@ -119,17 +119,9 @@ public class TFSDataModel implements Serializable{
 		this.propertiesMap = propertiesMap;
 	}
 	
-//	public InputStream getSttRequestStream() {
-//		return sttRequestStream;
-//	}
-//
-//	public void setSttRequestStream(InputStream sttRequestStream) {
-//		this.sttRequestStream = sttRequestStream;
-//	}
 	@Override
 	public String toString() {
 		return getClass().getName() + " "
 				+ new GsonBuilder().setPrettyPrinting().create().toJson(this);
-
 	}
 }
