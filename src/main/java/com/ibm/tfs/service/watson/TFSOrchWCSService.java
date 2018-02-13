@@ -16,6 +16,7 @@ import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
 import com.ibm.watson.developer_cloud.conversation.v1.model.InputData;
 import com.ibm.watson.developer_cloud.conversation.v1.model.MessageOptions;
 import com.ibm.watson.developer_cloud.conversation.v1.model.MessageResponse;
+import com.ibm.watson.developer_cloud.service.exception.UnauthorizedException;
 
 @Service("tfsOrchWCSService")
 public class TFSOrchWCSService {
@@ -66,7 +67,9 @@ public class TFSOrchWCSService {
 				logger.debug("Response in JSON : " + json);
 				tfsDataModel.setWcsResponse(json);
 			}
-
+		} catch (IllegalArgumentException | UnauthorizedException e) {
+			logger.error("Error in getting the WCS response. " + e.getMessage());
+			e.printStackTrace();
 		} catch (Exception e) {
 			logger.error("Error in getting the WCS response. " + e.getMessage());
 			e.printStackTrace();

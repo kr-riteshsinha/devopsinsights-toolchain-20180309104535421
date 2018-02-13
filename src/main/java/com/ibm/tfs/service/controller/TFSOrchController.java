@@ -3,12 +3,15 @@ package com.ibm.tfs.service.controller;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ibm.tfs.service.config.TFSConfig;
+import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.stt.Alternatives;
 import com.ibm.tfs.service.model.stt.Results;
@@ -27,6 +32,8 @@ import com.ibm.tfs.service.model.wcs.WCSResponse;
 import com.ibm.tfs.service.watson.TFSOrchSTTService;
 import com.ibm.tfs.service.watson.TFSOrchWCSService;
 import com.ibm.tfs.service.watson.TFSOrchWDSService;
+import com.ibm.utility.ObjectConverter;
+import com.ibm.utility.PIIScrubbingService;
 
 @RestController
 public class TFSOrchController {
@@ -42,6 +49,8 @@ public class TFSOrchController {
 	TFSOrchWCSService tfsOrchWCSService;
 	@Autowired
 	TFSOrchWDSService tfsOrchWDSService;
+	@Autowired
+	private TFSConfig tfsConfig;
 
 	/**
 	 * GET method to test the service availability
@@ -174,4 +183,66 @@ public class TFSOrchController {
 		}
 		return response;
 	}
+
+	/**
+	 * Method to receive Async call after STT response is received to further query WCS/WDS
+	 */
+	@Async
+	@Transactional
+	public void processSTTResponse(SessionMapper sessionMapper, TFSDataModel tfsDataModel) {
+
+		Context context = null;
+		String sttResponse = tfsDataModel.getSttResponse();
+		try {
+			if (sttResponse != null) {
+				String scrubbedSTTResponse = PIIScrubbingService.scrubPIIData(sttResponse, tfsConfig.getScrubOrStrip(), tfsConfig.getScrubKey());
+				// set scrubbed STT response back to TFSDataModel
+				tfsDataModel.setSttResponse(scrubbedSTTResponse);
+				// set scrubbed STT response to TFSDataModel as WCS Request
+				tfsDataModel.setWcsRequest(scrubbedSTTResponse);
+
+				// get caller context if available in session map
+				context = sessionMap.get(tfsDataModel.getHostName());
+				// call WCS service
+				tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
+
+				if (tfsDataModel.getWcsResponse() != null) {
+//									consolidatedWcsResponse += tfsDataModel.getWcsResponse();
+					ObjectMapper wcsResponseMapper = new ObjectMapper();
+					WCSResponse wcsResponse = wcsResponseMapper.readValue(tfsDataModel.getWcsResponse(), WCSResponse.class);
+
+					if (wcsResponse != null) {
+						context = wcsResponse.getContext();
+						sessionMap.put(tfsDataModel.getHostName(), context);
+
+						Output output = wcsResponse.getOutput();
+						if (output.getAction() != null && output.getAction().getDiscovery() != null
+						        && output.getAction().getDiscovery().getQuery_text() != null) {
+							// Query WDS
+							tfsDataModel.setWdsRequest(output.getAction().getDiscovery().getQuery_text());
+
+							tfsOrchWDSService.getWDSResponse(tfsDataModel);
+
+//											consolidatedWdsResponse += tfsDataModel.getWdsResponse();
+						}
+					}
+				}
+			}
+			
+			// convert TFSDataModel back to json string and return
+//			ObjectMapper mapper = new ObjectMapper();
+//			String response = mapper.writeValueAsString(tfsDataModel);
+			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);
+			
+			sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
+			
+		} catch (Exception e) {
+			logger.error("Error while communicating with Watson services. " + e.getMessage());
+			e.printStackTrace();
+		}
+
+//		tfsDataModel.setWcsResponse(consolidatedWcsResponse);
+//		tfsDataModel.setWdsResponse(consolidatedWdsResponse);
+	}
+
 }

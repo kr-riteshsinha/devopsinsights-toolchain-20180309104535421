@@ -13,6 +13,7 @@ import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.watson.developer_cloud.discovery.v1.Discovery;
 import com.ibm.watson.developer_cloud.discovery.v1.model.QueryOptions;
 import com.ibm.watson.developer_cloud.discovery.v1.model.QueryResponse;
+import com.ibm.watson.developer_cloud.service.exception.UnauthorizedException;
 
 @Service("tfsOrchWDSService")
 public class TFSOrchWDSService {
@@ -62,7 +63,9 @@ public class TFSOrchWDSService {
 				logger.debug("Response in JSON : " + json);
 				tfsDataModel.setWdsResponse(json);
 			}
-
+		} catch (IllegalArgumentException | UnauthorizedException e) {
+			logger.error("Error in getting the WCS response. " + e.getMessage());
+			e.printStackTrace();
 		} catch (Exception e) {
 			logger.error("Error in getting the WDS response. " + e.getMessage());
 			e.printStackTrace();
