@@ -1,32 +1,36 @@
 package com.ibm.tfs.service.model.wcs;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
+
+@JsonIgnoreProperties(ignoreUnknown = true) 
 public class WCSResponse {
 	
-	private Input input;
+//	private Input input;
 
-	private Intents[] intents;
+//	private Intents[] intents;
 
 	private Context context;
 
 	private Output output;
 
-	private String[] entities;
+//	private String[] entities;
 
-	public Input getInput() {
-		return input;
-	}
-
-	public void setInput(Input input) {
-		this.input = input;
-	}
-
-	public Intents[] getIntents() {
-		return intents;
-	}
-
-	public void setIntents(Intents[] intents) {
-		this.intents = intents;
-	}
+//	public Input getInput() {
+//		return input;
+//	}
+//
+//	public void setInput(Input input) {
+//		this.input = input;
+//	}
+//
+//	public Intents[] getIntents() {
+//		return intents;
+//	}
+//
+//	public void setIntents(Intents[] intents) {
+//		this.intents = intents;
+//	}
 
 	public Context getContext() {
 		return context;
@@ -44,17 +48,17 @@ public class WCSResponse {
 		this.output = output;
 	}
 
-	public String[] getEntities() {
-		return entities;
-	}
-
-	public void setEntities(String[] entities) {
-		this.entities = entities;
-	}
-
-	@Override
-	public String toString() {
-		return "WCSResponse [input = " + input + ", intents = " + intents + ", context = " + context + ", output = "
-				+ output + ", entities = " + entities + "]";
-	}
+//	public String[] getEntities() {
+//		return entities;
+//	}
+//
+//	public void setEntities(String[] entities) {
+//		this.entities = entities;
+//	}
+//
+//	@Override
+//	public String toString() {
+//		return "WCSResponse [input = " + input + ", intents = " + intents + ", context = " + context + ", output = "
+//				+ output + ", entities = " + entities + "]";
+//	}
 }

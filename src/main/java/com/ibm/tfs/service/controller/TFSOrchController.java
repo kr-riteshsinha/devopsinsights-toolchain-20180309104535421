@@ -26,7 +26,6 @@ import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.stt.Alternatives;
 import com.ibm.tfs.service.model.stt.Results;
 import com.ibm.tfs.service.model.stt.STTResponse;
-import com.ibm.tfs.service.model.wcs.Context;
 import com.ibm.tfs.service.model.wcs.Output;
 import com.ibm.tfs.service.model.wcs.WCSResponse;
 import com.ibm.tfs.service.watson.TFSOrchSTTService;
@@ -34,6 +33,7 @@ import com.ibm.tfs.service.watson.TFSOrchWCSService;
 import com.ibm.tfs.service.watson.TFSOrchWDSService;
 import com.ibm.utility.ObjectConverter;
 import com.ibm.utility.PIIScrubbingService;
+import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
 
 @RestController
 public class TFSOrchController {
@@ -191,11 +191,14 @@ public class TFSOrchController {
 	@Transactional
 	public void processSTTResponse(SessionMapper sessionMapper, TFSDataModel tfsDataModel) {
 
+		logger.info("TFSOrchController.processSTTResponse - begin");
 		Context context = null;
 		String sttResponse = tfsDataModel.getSttResponse();
 		try {
 			if (sttResponse != null) {
+				logger.debug("sttResponse - before scrubbing - " + sttResponse);
 				String scrubbedSTTResponse = PIIScrubbingService.scrubPIIData(sttResponse, tfsConfig.getScrubOrStrip(), tfsConfig.getScrubKey());
+				logger.debug("sttResponse - after scrubbing - " + scrubbedSTTResponse);
 				// set scrubbed STT response back to TFSDataModel
 				tfsDataModel.setSttResponse(scrubbedSTTResponse);
 				// set scrubbed STT response to TFSDataModel as WCS Request
@@ -203,6 +206,7 @@ public class TFSOrchController {
 
 				// get caller context if available in session map
 				context = sessionMap.get(tfsDataModel.getHostName());
+				logger.debug("WCS Context - " + context);
 				// call WCS service
 				tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 
@@ -231,11 +235,14 @@ public class TFSOrchController {
 			
 			// convert TFSDataModel back to json string and return
 //			ObjectMapper mapper = new ObjectMapper();
-//			String response = mapper.writeValueAsString(tfsDataModel);
-			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);
-			
-			sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
-			
+//			String tfsDataModelResponse = mapper.writeValueAsString(tfsDataModel);
+			tfsDataModel.setSttRequest(null);
+			tfsDataModel.setWcsRequest(null);
+			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);			
+			//sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
+			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
+
+			logger.info("TFSOrchController.processSTTResponse - begin");
 		} catch (Exception e) {
 			logger.error("Error while communicating with Watson services. " + e.getMessage());
 			e.printStackTrace();

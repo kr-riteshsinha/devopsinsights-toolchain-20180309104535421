@@ -1,5 +1,8 @@
 package com.ibm.tfs.service.model.wcs;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Intents {
 	private String confidence;
 

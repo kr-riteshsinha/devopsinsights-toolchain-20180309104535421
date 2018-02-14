@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -15,7 +16,6 @@ import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -24,7 +24,6 @@ import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
-import com.ibm.tfs.service.watson.TFSOrchSTTService;
 import com.ibm.utility.ObjectConverter;
 
 @Service("orchWebSocket")
@@ -133,7 +132,7 @@ public class OrchWebSocket {
 
 			speechToTextWs = new SpeectToTextWs(createSTTURL(), tfsConfig.getSttUsername(), tfsConfig.getSttPassword(),
 					sttparam);
-			RecognitionResultHandler msgHandler = new RecognitionResultHandler(model, 10);
+			RecognitionResultHandler msgHandler = new RecognitionResultHandler(model, tfsConfig.getMaxWrdBuffer());
 			msgHandler.addMessageHandler(new RecognitionResultHandler.MessageHandler() {
 				@Override
 				public void handleMessage(TFSDataModel model) {
@@ -179,10 +178,14 @@ public class OrchWebSocket {
 	public void onError(Session session, Throwable throwable) {
 		// Do error handling here
 		System.out.println("error");
+            try {
+				session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, throwable.getMessage()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 	}
 
 	public void postToOrcController(SessionMapper sessionMapper, TFSDataModel tfsDataMode) { 
-		
 		TFSContextBridge.getTFSOrchController().processSTTResponse(sessionMapper, tfsDataMode);
 	}
 }

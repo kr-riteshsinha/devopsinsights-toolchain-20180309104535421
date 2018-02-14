@@ -67,18 +67,18 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 		if (isConnectionReset) {
 			reset();
 		}
-		if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length > 10) {
-		//	agentVoice = agentVoice+builder.toString();
-			this._transcript.setSttResponse(agentVoice);
-			_messageHandler.handleMessage(this._transcript);
-			agentVoice = null;
-		}
-		if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length > 10) {
-			//	agentVoice = agentVoice+builder.toString();
-			this._transcript.setSttResponse(operatorVoice);
-				_messageHandler.handleMessage(this._transcript);
-				operatorVoice = null;
-			}
+//		if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length > 10) {
+//		//	agentVoice = agentVoice+builder.toString();
+//			this._transcript.setSttResponse(agentVoice);
+//			_messageHandler.handleMessage(this._transcript);
+//			agentVoice = null;
+//		}
+//		if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length > 10) {
+//			//	agentVoice = agentVoice+builder.toString();
+//			this._transcript.setSttResponse(operatorVoice);
+//				_messageHandler.handleMessage(this._transcript);
+//				operatorVoice = null;
+//			}
 //		
 //		if (_messageHandler != null) {
 //			_messageHandler.handleMessage(jbuf, 0);
@@ -159,6 +159,8 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			} else{
 				if(agentVoice != null || builder != null) {
 					conutineConverstation.add("Speaker"+ oldSpeaker+": "+agentVoice);
+					this._transcript.setSttResponse(operatorVoice);
+					_messageHandler.handleMessage(this._transcript);
 					agentVoice = builder.toString();
 				}
 			}
@@ -172,6 +174,8 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			} else{
 				if(operatorVoice != null) {
 					conutineConverstation.add("Speaker"+ oldSpeaker+": "+operatorVoice);
+					this._transcript.setSttResponse(operatorVoice);
+					_messageHandler.handleMessage(this._transcript);
 					operatorVoice = builder.toString();
 				}
 			}
@@ -212,10 +216,6 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 									for (SpeechTimestamp st: sa.getTimestamps()){
 										if (st!= null) {
 											SpeechDetail detail = new SpeechDetail();
-											double ctmPart3 = st.getStartTime();
-											double ctmPart4 = st.getEndTime();
-											String ctmPart6 = st.getWord();
-
 											detail.setFrom(st.getStartTime());
 											detail.setEnd(st.getEndTime());
 											detail.setWord(st.getWord());
@@ -254,8 +254,4 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 
 		}
 	}
-
-
-
-
 }

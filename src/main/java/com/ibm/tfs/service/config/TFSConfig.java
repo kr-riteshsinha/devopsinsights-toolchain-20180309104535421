@@ -92,8 +92,17 @@ public class TFSConfig {
 	@Value("${timestamp}")
 	private String timestamp;
 	
+	@Value("${max_word_buffer}")
+	private Integer maxWrdBuffer;
 	
-	
+	public Integer getMaxWrdBuffer() {
+		return maxWrdBuffer;
+	}
+
+	public void setMaxWrdBuffer(Integer maxWrdBuffer) {
+		this.maxWrdBuffer = maxWrdBuffer;
+	}
+
 	public String getTimestamp() {
 		return timestamp;
 	}
