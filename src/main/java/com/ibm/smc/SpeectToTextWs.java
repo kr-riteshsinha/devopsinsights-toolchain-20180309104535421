@@ -49,7 +49,6 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 
 	private Gson _gson = new Gson();
 	
-//	public static String DefaultQuery = "X-WDC-PL-OPT-OUT=1"; //deprecated on Dec.2015
 	public static String DefaultQuery = "x-watson-learning-opt-out=1";
 
 

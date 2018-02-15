@@ -16,6 +16,8 @@ import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -38,11 +40,10 @@ public class OrchWebSocket {
 	private static final String ACOUSTINCCUSTOMIZATIONID = "&acoustic_customization_id";
 	private static final String WATSON_LEARNING_OPT_OUT = "&x-watson-learning-opt-out";
 	private SpeectToTextWs.DefaultParams sttparam = new SpeectToTextWs.DefaultParams();
-
-	
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
-	
+	private static final Logger logger = LogManager.getLogger(OrchWebSocket.class.getName());
+	private static   int sessionCount = 0;
 
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
@@ -53,11 +54,14 @@ public class OrchWebSocket {
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
 		// Get session and WebSocket connection
-		System.out.println("ddd");
+		sessionCount++;
+		logger.info("no of session open : " + sessionCount);
 	}
 
 	@OnMessage
 	public void onMessage(Session session, String jsonObject) throws IOException {
+		logger.info("onMessage called with String parameter :");
+		logger.debug(jsonObject);
 		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
 		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
 
@@ -119,17 +123,10 @@ public class OrchWebSocket {
 		SessionMapper sessionMapper = new SessionMapper();
 
 		if (clientsMap.get(model.getAgentId()) == null) {
+			logger.info("New Agent Id registerd " + model.getAgentId());
 
 			sessionMapper.setDataModel(model);
 			sessionMapper.setWsSession(session);
-			// SpeectToTextWs.DefaultParams sttparam = new
-			// SpeectToTextWs.DefaultParams();
-			// speechToTextWs = new SpeectToTextWs(
-			// "wss://stream.watsonplatform.net/speech-to-text/api/v1/recognize?model=en-US_NarrowbandModel&x-watson-learning-opt-out=1&customization_id=14ed00ee-17ba-4320-85c9-d689d0614515",
-			// "9ba2eda8-43fc-4f82-8480-b2e31de1e414", "exWewnIa0kjh",
-			// sttparam);
-			// sessionMapper.setSpeechToTextWs(speechToTextWs);
-
 			speechToTextWs = new SpeectToTextWs(createSTTURL(), tfsConfig.getSttUsername(), tfsConfig.getSttPassword(),
 					sttparam);
 			RecognitionResultHandler msgHandler = new RecognitionResultHandler(model, tfsConfig.getMaxWrdBuffer());
@@ -137,10 +134,9 @@ public class OrchWebSocket {
 				@Override
 				public void handleMessage(TFSDataModel model) {
 					synchronized (msgHandler) {
+						logger.info("buffered message received for agent id " + model.getAgentId());
+						logger.debug(model.getSttResponse());
 						postToOrcController(sessionMapper, model);
-//							if (model.getSttResponse() != null && session.isOpen()) {
-//								sessionMapper.getWsSession().getBasicRemote().sendText(model.getSttResponse());
-//							}
 					}
 				}
 			});
@@ -150,6 +146,7 @@ public class OrchWebSocket {
 			sessionMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			clientsMap.put(model.getAgentId(), sessionMapper);
 		} else {
+			logger.info("Agent Id already registerd " + model.getAgentId());
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			existingMapper.setWsSession(session);
@@ -172,6 +169,7 @@ public class OrchWebSocket {
 	public void onClose(Session session) throws IOException {
 		// WebSocket connection closes
 		System.out.println("session closed");
+		logger.info("session closed");
 	}
 
 	@OnError
@@ -181,7 +179,7 @@ public class OrchWebSocket {
             try {
 				session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, throwable.getMessage()));
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
 			}
 	}
 

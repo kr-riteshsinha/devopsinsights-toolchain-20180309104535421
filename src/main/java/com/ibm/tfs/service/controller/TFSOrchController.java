@@ -240,6 +240,7 @@ public class TFSOrchController {
 			tfsDataModel.setWcsRequest(null);
 			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);			
 			//sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
+			System.out.println("respond send to :"+ tfsDataModel.getAgentId());
 			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
 
 			logger.info("TFSOrchController.processSTTResponse - begin");

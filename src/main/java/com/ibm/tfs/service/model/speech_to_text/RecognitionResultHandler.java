@@ -16,8 +16,11 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
+import com.ibm.tfs.service.controller.OrchWebSocket;
 import com.ibm.tfs.service.model.SpeechDetail;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeakerLabel;
@@ -27,9 +30,13 @@ import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechTimestamp;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.Transcript;
 
 public class RecognitionResultHandler implements MessageHandlerEX {
+	
+	private static final Logger logger = LogManager.getLogger(RecognitionResultHandler.class.getName());
+
 	private long _timerBeg = System.currentTimeMillis();
 	private long _timerNow = System.currentTimeMillis();
 	private List<String> operatorVoicelst = new ArrayList();
+	List<String> agentVoicelst = new ArrayList();
 	private TFSDataModel _transcript;
 	private Gson _gson = new Gson();
 	private int maxword=0;
@@ -57,6 +64,9 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			// Returns one or more instances of a SpeechRecognitionEvent object depending on the input. 
 			// Ref: https://www.ibm.com/watson/developercloud/speech-to-text/api/v1/#recognize_sessionless_nonmp12
 			 results = _gson.fromJson(jbuf, SpeechResults.class);
+			 logger.debug("Agend id :" +_transcript.getAgentId());
+			 logger.debug(jbuf);
+			 
 		} catch (com.google.gson.JsonSyntaxException e) {
 //			System.err.println("DEBUG: received message is NOT json:" + jbuf);
 			return;
@@ -129,7 +139,12 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 	
 	
 	private void reset() {
-		//TODO clear the buffer if connection is reset.
+	 // clean the buffer list
+		this.conutineConverstation.clear();
+		this.agentVoice = null;
+		this.operatorVoice = null;
+		this.operatorVoicelst.clear();
+		this.agentVoicelst.clear();
 	}
     
 	public static interface MessageHandler {
@@ -154,11 +169,15 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			if(agentVoice == null) {
 				agentVoice = builder.toString();
 			}
-			if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length < 10) {
+			if(agentVoice != null && StringUtils.split(agentVoice,StringUtils.SPACE).length < maxword) {
+				
 				agentVoice = agentVoice+builder.toString();
+				
 			} else{
+				
 				if(agentVoice != null || builder != null) {
 					conutineConverstation.add("Speaker"+ oldSpeaker+": "+agentVoice);
+					logger.debug("agentVoice is more than 10 words" +agentVoice);
 					this._transcript.setSttResponse(operatorVoice);
 					_messageHandler.handleMessage(this._transcript);
 					agentVoice = builder.toString();
@@ -169,10 +188,11 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 			if(operatorVoice == null) {
 				operatorVoice = builder.toString();
 			}
-			if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length < 10) {
+			if(operatorVoice != null && StringUtils.split(operatorVoice,StringUtils.SPACE).length < maxword) {
 				operatorVoice = operatorVoice+builder.toString();
 			} else{
 				if(operatorVoice != null) {
+					logger.debug("operator voice is more than 10 words" +operatorVoice);
 					conutineConverstation.add("Speaker"+ oldSpeaker+": "+operatorVoice);
 					this._transcript.setSttResponse(operatorVoice);
 					_messageHandler.handleMessage(this._transcript);
@@ -184,8 +204,6 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 		}
 	}
 	
-	
-	List<String> agentVoicelst = new ArrayList();
 	public List<String> getAgentVoicelst() {
 		return agentVoicelst;
 	}
@@ -244,8 +262,11 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 						speechDetail.setSpeakerId(speaker.getSpeaker());
 					}else {
 						speechDetail.setSpeakerId(speaker.getSpeaker());
+						logger.debug("Speaker changed :" +currentSpeaker );
+						logger.debug("start appending words now" );
 						makeSentence(speechDetailmap,currentSpeaker);
 						currentSpeaker =speaker.getSpeaker();
+						logger.debug("current speaker now :" +currentSpeaker );
 						// make sentence and remove the entry from hash map so that 
 					}
 				}

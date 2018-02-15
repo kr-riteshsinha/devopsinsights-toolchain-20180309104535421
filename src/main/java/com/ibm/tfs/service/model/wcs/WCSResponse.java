@@ -8,7 +8,7 @@ public class WCSResponse {
 	
 //	private Input input;
 
-//	private Intents[] intents;
+	private Intents[] intents;
 
 	private Context context;
 
@@ -24,13 +24,13 @@ public class WCSResponse {
 //		this.input = input;
 //	}
 //
-//	public Intents[] getIntents() {
-//		return intents;
-//	}
-//
-//	public void setIntents(Intents[] intents) {
-//		this.intents = intents;
-//	}
+	public Intents[] getIntents() {
+		return intents;
+	}
+
+	public void setIntents(Intents[] intents) {
+		this.intents = intents;
+	}
 
 	public Context getContext() {
 		return context;
