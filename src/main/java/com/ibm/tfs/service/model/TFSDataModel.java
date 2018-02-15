@@ -130,7 +130,6 @@ public class TFSDataModel implements Serializable{
 
 	@Override
 	public String toString() {
-		return getClass().getName() + " "
-				+ new GsonBuilder().setPrettyPrinting().create().toJson(this);
+		return new GsonBuilder().setPrettyPrinting().create().toJson(this);
 	}
 }

@@ -62,13 +62,14 @@ public class OrchWebSocket {
 	public void onMessage(Session session, String jsonObject) throws IOException {
 		logger.info("onMessage called with String parameter :");
 		logger.debug(jsonObject);
-		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
-		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
-
-		byte[] b = model.getSttRequest();
-		if (b != null) {
-			onMessage(session, b);
-		}
+		session.getBasicRemote().sendText(jsonObject);
+//		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
+//		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
+//
+//		byte[] b = model.getSttRequest();
+//		if (b != null) {
+//			onMessage(session, b);
+//		}
 	}
 
 	private byte[] convertBytetoVoiceByte(byte[] b) {
