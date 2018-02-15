@@ -9,13 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.ibm.tfs.service.config.TFSConfig;
+import com.ibm.tfs.service.exception.WatsonCommunicationException;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.watson.developer_cloud.conversation.v1.Conversation;
 import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
 import com.ibm.watson.developer_cloud.conversation.v1.model.InputData;
 import com.ibm.watson.developer_cloud.conversation.v1.model.MessageOptions;
 import com.ibm.watson.developer_cloud.conversation.v1.model.MessageResponse;
-import com.ibm.watson.developer_cloud.service.exception.UnauthorizedException;
 
 @Service("tfsOrchWCSService")
 public class TFSOrchWCSService {
@@ -34,7 +34,7 @@ public class TFSOrchWCSService {
 	public TFSOrchWCSService() {
 	}
 
-	public TFSDataModel getWCSResponse(TFSDataModel tfsDataModel, Context context) {
+	public TFSDataModel getWCSResponse(TFSDataModel tfsDataModel, Context context) throws WatsonCommunicationException {
 		logger.info("TFS Orchestration WCS Service - begin");
 
 		username = tfsConfig.getWcsUsername();
@@ -61,12 +61,10 @@ public class TFSOrchWCSService {
 				logger.debug("Response in JSON : " + json);
 				tfsDataModel.setWcsResponse(json);
 			}
-		} catch (IllegalArgumentException | UnauthorizedException e) {
-			logger.error("Error in getting the WCS response. " + e.getMessage());
-			e.printStackTrace();
 		} catch (Exception e) {
 			logger.error("Error in getting the WCS response. " + e.getMessage());
 			e.printStackTrace();
+			throw new WatsonCommunicationException("Error in getting the WCS response. " + e.getMessage());
 		}
 
 		return tfsDataModel;

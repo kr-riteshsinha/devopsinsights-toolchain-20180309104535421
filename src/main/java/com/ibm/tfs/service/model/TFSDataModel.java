@@ -1,6 +1,5 @@
 package com.ibm.tfs.service.model;
 
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -17,7 +16,8 @@ public class TFSDataModel implements Serializable{
 	private String wdsResponse;
 	private String wcsRequest;
 	private String wdsRequest;
-	//private InputStream sttRequestStream;
+	
+	private String responseMessage;
 
 	private Map<Object, Object> propertiesMap;
 	
@@ -25,7 +25,7 @@ public class TFSDataModel implements Serializable{
 	}
 
 	public TFSDataModel(String agentId, String channelId, String hostName, byte[] sttRequest, String sttResponse,
-			String wcsResponse, String wdsResponse, String wcsRequest, String wdsRequest,
+			String wcsResponse, String wdsResponse, String wcsRequest, String wdsRequest, String responseMessage,
 			Map<Object, Object> propertiesMap) {
 		this.agentId = agentId;
 		this.channelId = channelId;
@@ -36,6 +36,7 @@ public class TFSDataModel implements Serializable{
 		this.wdsResponse = wdsResponse;
 		this.wcsRequest = wcsRequest;
 		this.wdsRequest = wdsRequest;
+		this.responseMessage = responseMessage;
 		this.propertiesMap = propertiesMap;
 	}
 
@@ -102,6 +103,14 @@ public class TFSDataModel implements Serializable{
 	public void setWcsRequest(String wcsRequest) {
 		this.wcsRequest = wcsRequest;
 	}
+	
+	public String getResponseMessage() {
+		return responseMessage;
+	}
+
+	public void setResponseMessage(String responseMessage) {
+		this.responseMessage = responseMessage;
+	}
 
 	public String getWdsRequest() {
 		return wdsRequest;
@@ -118,7 +127,7 @@ public class TFSDataModel implements Serializable{
 	public void setPropertiesMap(Map<Object, Object> propertiesMap) {
 		this.propertiesMap = propertiesMap;
 	}
-	
+
 	@Override
 	public String toString() {
 		return getClass().getName() + " "

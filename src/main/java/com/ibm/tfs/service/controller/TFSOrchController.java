@@ -1,9 +1,5 @@
 package com.ibm.tfs.service.controller;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,7 +27,6 @@ import com.ibm.tfs.service.model.wcs.WCSResponse;
 import com.ibm.tfs.service.watson.TFSOrchSTTService;
 import com.ibm.tfs.service.watson.TFSOrchWCSService;
 import com.ibm.tfs.service.watson.TFSOrchWDSService;
-import com.ibm.utility.ObjectConverter;
 import com.ibm.utility.PIIScrubbingService;
 import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
 
@@ -103,23 +98,6 @@ public class TFSOrchController {
 			ObjectMapper mapper = new ObjectMapper();
 			tfsDataModel = mapper.readValue(json, TFSDataModel.class);
 
-			// TODO: get the responses from STT, WCS and WDS
-
-			// TEST code: ideally tfsDataModel would have the byte[] populated
-			File sampleAudioFile = new File("C:\\work\\Cognitive\\TFS\\sample.wav");
-			// InputStream fis = new FileInputStream(sampleAudioFile);
-			// byte[] sampleBytes = new byte[(int) sampleAudioFile.length()];
-			// fis.read(sampleBytes, 0, sampleBytes.length);
-			// fis.close();
-
-			FileInputStream in = new FileInputStream(sampleAudioFile);
-			BufferedInputStream bis = new BufferedInputStream(in);
-			byte[] sampleBytes = new byte[bis.available()];
-			bis.close();
-
-			tfsDataModel.setSttRequest(sampleBytes);
-			// TEST code - end
-
 			if (tfsDataModel.getSttRequest() != null) {
 				tfsOrchSTTService.getSTTResponse(tfsDataModel);
 			}
@@ -171,7 +149,7 @@ public class TFSOrchController {
 			tfsDataModel.setWcsResponse(consolidatedWcsResponse);
 			tfsDataModel.setWdsResponse(consolidatedWdsResponse);
 
-			// TODO: this will be removed later. currently the STT request json looks ugly when printed
+			// the STT request json looks ugly when printed, removing it
 			tfsDataModel.setSttRequest(null);
 
 			response = mapper.writeValueAsString(tfsDataModel);
@@ -211,7 +189,7 @@ public class TFSOrchController {
 				tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 
 				if (tfsDataModel.getWcsResponse() != null) {
-//									consolidatedWcsResponse += tfsDataModel.getWcsResponse();
+//					consolidatedWcsResponse += tfsDataModel.getWcsResponse();
 					ObjectMapper wcsResponseMapper = new ObjectMapper();
 					WCSResponse wcsResponse = wcsResponseMapper.readValue(tfsDataModel.getWcsResponse(), WCSResponse.class);
 
@@ -227,30 +205,31 @@ public class TFSOrchController {
 
 							tfsOrchWDSService.getWDSResponse(tfsDataModel);
 
-//											consolidatedWdsResponse += tfsDataModel.getWdsResponse();
+//							consolidatedWdsResponse += tfsDataModel.getWdsResponse();
 						}
 					}
 				}
 			}
+
+//			tfsDataModel.setWcsResponse(consolidatedWcsResponse);
+//			tfsDataModel.setWdsResponse(consolidatedWdsResponse);
 			
-			// convert TFSDataModel back to json string and return
-//			ObjectMapper mapper = new ObjectMapper();
-//			String tfsDataModelResponse = mapper.writeValueAsString(tfsDataModel);
+			// removing the STT request data from TFS Data model, to reduce the object size
 			tfsDataModel.setSttRequest(null);
+			// removing the WCS request data since it is duplicate of STT response
 			tfsDataModel.setWcsRequest(null);
-			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);			
-			//sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
-			System.out.println("respond send to :"+ tfsDataModel.getAgentId());
+			
+//			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);			
+//			sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
+			
+			logger.debug("response sent to "+ tfsDataModel.getAgentId());
 			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
 
-			logger.info("TFSOrchController.processSTTResponse - begin");
+			logger.info("TFSOrchController.processSTTResponse - end");
 		} catch (Exception e) {
-			logger.error("Error while communicating with Watson services. " + e.getMessage());
+			logger.error(e.getMessage());
 			e.printStackTrace();
+			tfsDataModel.setResponseMessage(e.getMessage());
 		}
-
-//		tfsDataModel.setWcsResponse(consolidatedWcsResponse);
-//		tfsDataModel.setWdsResponse(consolidatedWdsResponse);
 	}
-
 }
