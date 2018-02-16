@@ -7,6 +7,8 @@ import com.google.gson.GsonBuilder;
 
 public class TFSDataModel implements Serializable{
 
+	private static final long serialVersionUID = 1L;
+
 	private String agentId;
 	private String channelId;
 	private String hostName;

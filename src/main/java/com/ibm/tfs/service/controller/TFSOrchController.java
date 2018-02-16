@@ -35,7 +35,7 @@ public class TFSOrchController {
 
 	private static final Logger logger = LogManager.getLogger(TFSOrchController.class.getName());
 
-	// Map to maintain the session for a single call, map of hostname-WCSContext
+	// Map to maintain the session for a single call, map of AgentId-WCSContext
 	private static Map<String, Context> sessionMap = new ConcurrentHashMap<>();
 
 	@Autowired
@@ -63,15 +63,15 @@ public class TFSOrchController {
 	 * 
 	 * @return
 	 */
-	@RequestMapping(value = "/tfsOrchService/disconnect/{hostname}", method = RequestMethod.PUT)
-	public String disconnectSession(@PathVariable("hostname") String hostname) {
+	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId}", method = RequestMethod.PUT)
+	public String disconnectSession(@PathVariable("agentId") String agentId) {
 		logger.info("TFS Orchestration Service - disconnect session!");
 		String response;
-		Context remove = sessionMap.remove(hostname);
+		Context remove = sessionMap.remove(agentId);
 		if (remove == null) {
-			response = "There was no session associated with the hostname " + hostname;
+			response = "There was no session associated with the Agent Id " + agentId;
 		} else {
-			response = "The session associated with the hostname " + hostname + " has been removed";
+			response = "The session associated with the Agent Id " + agentId + " has been removed";
 		}
 
 		return response;
@@ -115,7 +115,7 @@ public class TFSOrchController {
 									tfsDataModel.setWcsRequest(alternative.getTranscript());
 
 									// get caller context if available in session map
-									context = sessionMap.get(tfsDataModel.getHostName());
+									context = sessionMap.get(tfsDataModel.getAgentId());
 									tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 
 									if (tfsDataModel.getWcsResponse() != null) {
@@ -125,7 +125,7 @@ public class TFSOrchController {
 
 										if (wcsResponse != null) {
 											context = wcsResponse.getContext();
-											sessionMap.put(tfsDataModel.getHostName(), context);
+											sessionMap.put(tfsDataModel.getAgentId(), context);
 
 											Output output = wcsResponse.getOutput();
 											if (output.getAction() != null && output.getAction().getDiscovery() != null
@@ -183,7 +183,7 @@ public class TFSOrchController {
 				tfsDataModel.setWcsRequest(scrubbedSTTResponse);
 
 				// get caller context if available in session map
-				context = sessionMap.get(tfsDataModel.getHostName());
+				context = sessionMap.get(tfsDataModel.getAgentId());
 				logger.debug("WCS Context - " + context);
 				// call WCS service
 				tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
@@ -195,7 +195,7 @@ public class TFSOrchController {
 
 					if (wcsResponse != null) {
 						context = wcsResponse.getContext();
-						sessionMap.put(tfsDataModel.getHostName(), context);
+						sessionMap.put(tfsDataModel.getAgentId(), context);
 
 						Output output = wcsResponse.getOutput();
 						if (output.getAction() != null && output.getAction().getDiscovery() != null
