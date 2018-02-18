@@ -36,6 +36,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		public boolean word_confidence = true;
 		public boolean smart_formatting = true;
 		public boolean speaker_labels = true;
+		public String customization_id = "14ed00ee-17ba-4320-85c9-d689d0614515";
 		//public String model="en-US_NarrowbandModel&x-watson-learning-opt-out=1&customization_id=14ed00ee-17ba-4320-85c9-d689d0614515";
 	};
 
@@ -211,6 +212,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 
 		if (_socket != null) {
 			_socket.sendMessage(b);
+			//_socket.sendMessage("wss://stream.watsonplatform.net/speech-to-text/api/v1/customizations?language=en-US");
 		}
 		
 	}

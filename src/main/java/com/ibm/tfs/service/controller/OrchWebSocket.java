@@ -1,10 +1,20 @@
 package com.ibm.tfs.service.controller;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SealedObject;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -26,6 +36,7 @@ import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
+import com.ibm.utility.EncryptionUtility;
 import com.ibm.utility.ObjectConverter;
 
 @Service("orchWebSocket")
@@ -99,9 +110,9 @@ public class OrchWebSocket {
 			urlBuilder.append(ACOUSTINCCUSTOMIZATIONID + "=" + tfsConfig.getAcousticCustomizationID());
 		}
 
-		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
-			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
-		}
+//		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
+//			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
+//		}
 
 		if (!StringUtils.isBlank(tfsConfig.getWatsonLearningOptout())) {
 			urlBuilder.append(WATSON_LEARNING_OPT_OUT + "=" + tfsConfig.getWatsonLearningOptout());
@@ -119,7 +130,10 @@ public class OrchWebSocket {
 
 	private void isValidSessionExist(Session session, byte[] b) {
 		// TODO :Decryot and deseralize ;
-
+		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+		
+		try {
+		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
 		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
 		SessionMapper sessionMapper = new SessionMapper();
 
@@ -151,6 +165,18 @@ public class OrchWebSocket {
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			existingMapper.setWsSession(session);
+		}
+		
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			TFSDataModel exceptionModel = new TFSDataModel();
+			exceptionModel.setResponseMessage(e.getMessage());
+			try {
+				session.getBasicRemote().sendText(exceptionModel.toString());
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 
 	}
