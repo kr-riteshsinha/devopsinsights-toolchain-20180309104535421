@@ -62,7 +62,7 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 				filter.doFilter(request, response);
 			} else {
 				System.out.println("Auth failure");
-				logger.error("Auth failure for Request : " + httpServletRequest);
+				logger.error("Auth failure");
 				if (response instanceof HttpServletResponse) {
 					HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 					httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

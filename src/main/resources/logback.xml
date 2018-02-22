@@ -9,21 +9,33 @@
 	    </layout>
 	</appender>
 
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>testFile.log</file>
+<!-- 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>logs/SystemOut.log</file>
 		<append>true</append>
-		<!-- set immediateFlush to false for much higher logging throughput -->
+		set immediateFlush to false for much higher logging throughput
 		<immediateFlush>true</immediateFlush>
-		<!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
-			by default -->
+		encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
+			by default
 		<encoder>
 			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n
 			</pattern>
 		</encoder>
+	</appender> -->
+	
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	    <file>logs/SystemOut.log</file>
+	    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+	        <fileNamePattern>logs/SystemOut.%d{yyyy-MM-dd}.log</fileNamePattern>
+	        <maxHistory>30</maxHistory>
+	        <totalSizeCap>1MB</totalSizeCap>
+	    </rollingPolicy>
+	    <encoder>
+	        <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{35} - %msg%n</pattern>
+	    </encoder>
 	</appender>
   
-	<logger name="com.ibm.tfs" level="debug" additivity="true">
-		<appender-ref ref="STDOUT" />
+	<logger name="com.ibm.tfs.debug" level="debug" additivity="true">
+		<appender-ref ref="FILE" />
 	</logger>
 
 	<root level="debug">
