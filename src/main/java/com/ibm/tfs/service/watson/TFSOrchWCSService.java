@@ -2,8 +2,8 @@ package com.ibm.tfs.service.watson;
 
 import java.util.Date;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ import com.ibm.watson.developer_cloud.conversation.v1.model.MessageResponse;
 @Service("tfsOrchWCSService")
 public class TFSOrchWCSService {
 
-	private static final Logger logger = LogManager.getLogger(TFSOrchWCSService.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(TFSOrchWCSService.class.getName());
 	private String username;
 	private String password;
 //	private String endpoint;

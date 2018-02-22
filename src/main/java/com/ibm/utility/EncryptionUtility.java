@@ -20,14 +20,14 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ibm.tfs.service.model.TFSDataModel;
 
 public class EncryptionUtility {
 
-	private static final Logger logger = LogManager.getLogger(EncryptionUtility.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(EncryptionUtility.class.getName());
 	private static final byte[] INITIAL_IV = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	// Appender console = RollingFileAppender.Builder<Builder<B>>;
 
@@ -157,7 +157,7 @@ public class EncryptionUtility {
 			// ResultQueueProcessorTest.serializeAudioFile();
 
 			// Map<Object,Object> map1 = new Map<Object, Object>();
-			tfsModel = new TFSDataModel(agentId, channelId, hostName, null, sttResponse, wcsResponse, wdsResponse,
+			tfsModel = new TFSDataModel(agentId, channelId, null, sttResponse, wcsResponse, wdsResponse,
 					wcsRequest, wdsRequest, null, null);
 			System.out.println("Original TFSDataModel to be encrypted : " + tfsModel);
 

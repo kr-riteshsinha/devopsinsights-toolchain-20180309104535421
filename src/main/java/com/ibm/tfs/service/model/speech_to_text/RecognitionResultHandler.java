@@ -16,11 +16,10 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.ibm.tfs.service.controller.OrchWebSocket;
 import com.ibm.tfs.service.model.SpeechDetail;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeakerLabel;
@@ -31,7 +30,7 @@ import com.ibm.watson.developer_cloud.speech_to_text.v1.model.Transcript;
 
 public class RecognitionResultHandler implements MessageHandlerEX {
 	
-	private static final Logger logger = LogManager.getLogger(RecognitionResultHandler.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(RecognitionResultHandler.class.getName());
 
 	private long _timerBeg = System.currentTimeMillis();
 	private long _timerNow = System.currentTimeMillis();

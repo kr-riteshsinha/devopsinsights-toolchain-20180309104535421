@@ -11,8 +11,8 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +31,7 @@ import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechSessionStatu
 @Service("tfsOrchSTTService")
 public class TFSOrchSTTService {
 
-	private static final Logger logger = LogManager.getLogger(TFSOrchSTTService.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(TFSOrchSTTService.class.getName());
 
 	// Map to maintain the STT session for a single call, map of hostname-STTSpeechSession
 	private static Map<String, SpeechSession> sessionMap = new ConcurrentHashMap<>();
@@ -51,7 +51,6 @@ public class TFSOrchSTTService {
 	public TFSDataModel getSTTResponse(TFSDataModel tfsDataModel) {
 		logger.info("TFS Orchestration STT Service - begin");
 
-		// TODO: call STT
 		username = tfsConfig.getSttUsername();
 		password = tfsConfig.getSttPassword();
 		endpoint = tfsConfig.getSttEndPoint();
@@ -77,7 +76,7 @@ public class TFSOrchSTTService {
 			inputAudioFile = new File("C:\\work\\Cognitive\\TFS\\sample.wav");
 			// TODO : need to break this file and call STT that many times...
 
-			SpeechSession speechSession = sessionMap.get(tfsDataModel.getHostName());
+			SpeechSession speechSession = sessionMap.get(tfsDataModel.getAgentId());
 			SpeechSessionStatus status = null;
 			if (speechSession != null) {
 				try {
@@ -101,7 +100,7 @@ public class TFSOrchSTTService {
 				startTime = new Date().getTime();
 				speechSession = service.createSession(SpeechModel.EN_US_NARROWBANDMODEL).execute();
 				System.out.println("Time(ms) for STT CreateSession API - " + (new Date().getTime() - startTime));
-				sessionMap.put(tfsDataModel.getHostName(), speechSession);
+				sessionMap.put(tfsDataModel.getAgentId(), speechSession);
 			}
 			if (speechSession != null) {
 				try {

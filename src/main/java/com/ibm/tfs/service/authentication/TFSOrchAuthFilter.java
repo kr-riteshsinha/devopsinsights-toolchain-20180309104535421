@@ -12,6 +12,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component(value = "AuthFilter")
@@ -26,6 +28,8 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 	public static String configUsername = "";
 	public static String configPassword = "";
 	
+	private static final Logger logger = LoggerFactory.getLogger(TFSOrchAuthFilter.class.getName());
+	
 	static {
 		Properties prop = new Properties();
 		InputStream in = TFSOrchAuthFilter.class.getResourceAsStream(configFile);
@@ -36,6 +40,7 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 			in.close();
 		} catch (IOException e) {
 			System.out.println("Error while loading auth properties");
+			logger.error("Error while loading auth properties");
 			e.printStackTrace();
 		}
 	}
@@ -53,9 +58,11 @@ public class TFSOrchAuthFilter implements javax.servlet.Filter {
 
 			if (authenticationStatus) {
 				System.out.println("Auth successful");
+				logger.debug("Auth successful");
 				filter.doFilter(request, response);
 			} else {
 				System.out.println("Auth failure");
+				logger.error("Auth failure for Request : " + httpServletRequest);
 				if (response instanceof HttpServletResponse) {
 					HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 					httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

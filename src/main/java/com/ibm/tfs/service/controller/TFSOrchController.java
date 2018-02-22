@@ -3,8 +3,8 @@ package com.ibm.tfs.service.controller;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +33,7 @@ import com.ibm.watson.developer_cloud.conversation.v1.model.Context;
 @RestController
 public class TFSOrchController {
 
-	private static final Logger logger = LogManager.getLogger(TFSOrchController.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(TFSOrchController.class.getName());
 
 	// Map to maintain the session for a single call, map of AgentId-WCSContext
 	private static Map<String, Context> sessionMap = new ConcurrentHashMap<>();

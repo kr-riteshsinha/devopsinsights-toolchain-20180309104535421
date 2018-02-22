@@ -6,32 +6,32 @@ import java.util.Map;
 import com.google.gson.GsonBuilder;
 
 public class TFSDataModel implements Serializable{
-
+	
 	private static final long serialVersionUID = 1L;
 
 	private String agentId;
 	private String channelId;
-	private String hostName;
 	private byte[] sttRequest;
 	private String sttResponse;
 	private String wcsResponse;
 	private String wdsResponse;
 	private String wcsRequest;
-	private String wdsRequest;
-	
+	private String wdsRequest;	
 	private String responseMessage;
-
+	private String callStartTimestamp;
+	private String callEndTimeStamp;
+	private String callDurationTimestamp;
+	
 	private Map<Object, Object> propertiesMap;
 	
 	public TFSDataModel() {
 	}
 
-	public TFSDataModel(String agentId, String channelId, String hostName, byte[] sttRequest, String sttResponse,
+	public TFSDataModel(String agentId, String channelId, byte[] sttRequest, String sttResponse,
 			String wcsResponse, String wdsResponse, String wcsRequest, String wdsRequest, String responseMessage,
 			Map<Object, Object> propertiesMap) {
 		this.agentId = agentId;
-		this.channelId = channelId;
-		this.hostName = hostName;
+		this.channelId = channelId;		
 		this.sttRequest = sttRequest;
 		this.sttResponse = sttResponse;
 		this.wcsResponse = wcsResponse;
@@ -56,14 +56,6 @@ public class TFSDataModel implements Serializable{
 
 	public void setChannelId(String channelId) {
 		this.channelId = channelId;
-	}
-
-	public String getHostName() {
-		return hostName;
-	}
-
-	public void setHostName(String hostName) {
-		this.hostName = hostName;
 	}
 
 	public byte[] getSttRequest() {
@@ -128,6 +120,30 @@ public class TFSDataModel implements Serializable{
 
 	public void setPropertiesMap(Map<Object, Object> propertiesMap) {
 		this.propertiesMap = propertiesMap;
+	}
+	
+	public String getCallStartTime() {
+		return callStartTimestamp;
+	}
+
+	public void setCallStartTime(String callStartTime) {
+		this.callStartTimestamp = callStartTime;
+	}
+
+	public String getCallEndTime() {
+		return callEndTimeStamp;
+	}
+
+	public void setCallEndTime(String callEndTime) {
+		this.callEndTimeStamp = callEndTime;
+	}
+
+	public String getCallDurationTime() {
+		return callDurationTimestamp;
+	}
+
+	public void setCallDurationTime(String callDurationTime) {
+		this.callDurationTimestamp = callDurationTime;
 	}
 
 	@Override

@@ -1,20 +1,10 @@
 package com.ibm.tfs.service.controller;
 
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SealedObject;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -26,8 +16,8 @@ import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -36,7 +26,6 @@ import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
-import com.ibm.utility.EncryptionUtility;
 import com.ibm.utility.ObjectConverter;
 
 @Service("orchWebSocket")
@@ -53,7 +42,7 @@ public class OrchWebSocket {
 	private SpeectToTextWs.DefaultParams sttparam = new SpeectToTextWs.DefaultParams();
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
-	private static final Logger logger = LogManager.getLogger(OrchWebSocket.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
 	private static   int sessionCount = 0;
 
 	private TFSConfig getTFSConfig() {
@@ -67,12 +56,14 @@ public class OrchWebSocket {
 		// Get session and WebSocket connection
 		sessionCount++;
 		logger.info("no of session open : " + sessionCount);
+		System.out.println("no of session open : " + sessionCount);
 	}
 
 	@OnMessage
 	public void onMessage(Session session, String jsonObject) throws IOException {
 		logger.info("onMessage called with String parameter :");
 		logger.debug(jsonObject);
+		System.out.println("onMessage called with String parameter :" + jsonObject);
 		session.getBasicRemote().sendText(jsonObject);
 //		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
 //		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
@@ -130,10 +121,10 @@ public class OrchWebSocket {
 
 	private void isValidSessionExist(Session session, byte[] b) {
 		// TODO :Decryot and deseralize ;
-		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+//		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
 		
 		try {
-		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
+//		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
 		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
 		SessionMapper sessionMapper = new SessionMapper();
 
@@ -182,7 +173,7 @@ public class OrchWebSocket {
 	}
 
 	public void sendResponse(TFSDataModel model) {
-		SessionMapper mapper = clientsMap.get(model.getHostName());
+		SessionMapper mapper = clientsMap.get(model.getAgentId());
 		try {
 			// WCS WDS
 			mapper.getWsSession().getBasicRemote().sendText(_gson.toJson(model));
@@ -202,7 +193,7 @@ public class OrchWebSocket {
 	@OnError
 	public void onError(Session session, Throwable throwable) {
 		// Do error handling here
-		System.out.println("error");
+		System.out.println("error" + throwable.getMessage());
             try {
 				session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, throwable.getMessage()));
 			} catch (IOException e) {
