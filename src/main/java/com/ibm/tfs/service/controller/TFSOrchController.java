@@ -1,5 +1,6 @@
 package com.ibm.tfs.service.controller;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,19 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
+//import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+//import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.tfs.service.config.TFSConfig;
+import com.ibm.tfs.service.model.CallContext;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
-import com.ibm.tfs.service.model.stt.Alternatives;
-import com.ibm.tfs.service.model.stt.Results;
-import com.ibm.tfs.service.model.stt.STTResponse;
+//import com.ibm.tfs.service.model.stt.Alternatives;
+//import com.ibm.tfs.service.model.stt.Results;
+//import com.ibm.tfs.service.model.stt.STTResponse;
 import com.ibm.tfs.service.model.wcs.Output;
 import com.ibm.tfs.service.model.wcs.WCSResponse;
 import com.ibm.tfs.service.watson.TFSOrchSTTService;
@@ -36,7 +38,7 @@ public class TFSOrchController {
 	private static final Logger logger = LoggerFactory.getLogger(TFSOrchController.class.getName());
 
 	// Map to maintain the session for a single call, map of AgentId-WCSContext
-	private static Map<String, Context> sessionMap = new ConcurrentHashMap<>();
+	private static Map<String, CallContext> sessionMap = new ConcurrentHashMap<>();
 
 	@Autowired
 	TFSOrchSTTService tfsOrchSTTService;
@@ -66,13 +68,28 @@ public class TFSOrchController {
 	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId}", method = RequestMethod.PUT)
 	public String disconnectSession(@PathVariable("agentId") String agentId) {
 		logger.info("TFS Orchestration Service - disconnect session!");
-		String response;
-		Context remove = sessionMap.remove(agentId);
-		if (remove == null) {
-			response = "There was no session associated with the Agent Id " + agentId;
+		String response = null;
+		String responseMessage;
+		TFSDataModel dataModel = new TFSDataModel();
+		dataModel.setAgentId(agentId);
+		
+		CallContext callContext = sessionMap.remove(agentId);
+		
+		if (callContext == null) {
+			responseMessage = "There was no session associated with the Agent Id " + agentId;
+			dataModel.setResponseMessage(responseMessage);
 		} else {
-			response = "The session associated with the Agent Id " + agentId + " has been removed";
+			long endTime = new Date().getTime();
+			long callDuration = endTime - callContext.getCallStartTime();
+			responseMessage = "The session associated with the Agent Id " + agentId + " has been removed. The call duration (in milliseconds) was - " + callDuration;
+			
+			dataModel.setResponseMessage(responseMessage);
+			dataModel.setCallStartTime(String.valueOf(callContext.getCallStartTime()));
+			dataModel.setCallEndTime(String.valueOf(endTime));
+			dataModel.setCallDurationTime(String.valueOf(callDuration));
 		}
+		
+		response = dataModel.toString();
 
 		return response;
 	}
@@ -83,7 +100,7 @@ public class TFSOrchController {
 	 * @param tfsDataModel
 	 * @return tfsDataModel
 	 */
-	@RequestMapping(value = "/tfsOrchService", method = RequestMethod.POST)
+/*	@RequestMapping(value = "/tfsOrchService", method = RequestMethod.POST)
 	@ResponseBody
 	public String postMessage(@RequestBody String json) {
 
@@ -161,16 +178,22 @@ public class TFSOrchController {
 		}
 		return response;
 	}
+*/
 
 	/**
 	 * Method to receive Async call after STT response is received to further query WCS/WDS
 	 */
 	@Async
 	@Transactional
-	public void processSTTResponse(SessionMapper sessionMapper, TFSDataModel tfsDataModel) {
+	public void processSTTResponse(SessionMapper sessionMapper, TFSDataModel mediationTfsDataModel) {
 
 		logger.info("TFSOrchController.processSTTResponse - begin");
 		Context context = null;
+		CallContext callContext = null;
+		TFSDataModel tfsDataModel = new TFSDataModel();
+		tfsDataModel.setAgentId(mediationTfsDataModel.getAgentId());
+		tfsDataModel.setSttResponse(mediationTfsDataModel.getSttResponse());
+		
 		String sttResponse = tfsDataModel.getSttResponse();
 		try {
 			if (sttResponse != null) {
@@ -183,46 +206,47 @@ public class TFSOrchController {
 				tfsDataModel.setWcsRequest(scrubbedSTTResponse);
 
 				// get caller context if available in session map
-				context = sessionMap.get(tfsDataModel.getAgentId());
+				callContext = sessionMap.get(tfsDataModel.getAgentId());
+				if (callContext != null) {
+					context = callContext.getContext();
+				}
 				logger.debug("WCS Context - " + context);
 				// call WCS service
 				tfsOrchWCSService.getWCSResponse(tfsDataModel, context);
 
 				if (tfsDataModel.getWcsResponse() != null) {
-//					consolidatedWcsResponse += tfsDataModel.getWcsResponse();
 					ObjectMapper wcsResponseMapper = new ObjectMapper();
 					WCSResponse wcsResponse = wcsResponseMapper.readValue(tfsDataModel.getWcsResponse(), WCSResponse.class);
 
 					if (wcsResponse != null) {
 						context = wcsResponse.getContext();
-						sessionMap.put(tfsDataModel.getAgentId(), context);
+						if (callContext != null) {
+							callContext.setContext(context);							
+						} else {
+							callContext = new CallContext();
+							callContext.setCallStartTime(new Date().getTime());
+							callContext.setContext(context);
+						}
+						sessionMap.put(tfsDataModel.getAgentId(), callContext);
 
 						Output output = wcsResponse.getOutput();
 						if (output.getAction() != null && output.getAction().getDiscovery() != null
 						        && output.getAction().getDiscovery().getQuery_text() != null) {
 							// Query WDS
 							tfsDataModel.setWdsRequest(output.getAction().getDiscovery().getQuery_text());
-
 							tfsOrchWDSService.getWDSResponse(tfsDataModel);
-
-//							consolidatedWdsResponse += tfsDataModel.getWdsResponse();
 						}
 					}
 				}
 			}
 
-//			tfsDataModel.setWcsResponse(consolidatedWcsResponse);
-//			tfsDataModel.setWdsResponse(consolidatedWdsResponse);
-			
 			// removing the STT request data from TFS Data model, to reduce the object size
 			tfsDataModel.setSttRequest(null);
 			// removing the WCS request data since it is duplicate of STT response
 			tfsDataModel.setWcsRequest(null);
 			
-//			byte[] tfsDataModelResponse = ObjectConverter.serialize(tfsDataModel);			
-//			sessionMapper.getWsSession().getBasicRemote().sendBinary(ByteBuffer.wrap(tfsDataModelResponse));
-			
 			logger.debug("response sent to "+ tfsDataModel.getAgentId());
+			logger.debug("TFSDataModel : " + tfsDataModel.toString());
 			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
 
 			logger.info("TFSOrchController.processSTTResponse - end");
