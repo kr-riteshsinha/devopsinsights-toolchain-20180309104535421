@@ -120,7 +120,7 @@ public class OrchWebSocket {
 	}
 
 	private void isValidSessionExist(Session session, byte[] b) {
-		// TODO :Decryot and deseralize ;
+		// TODO : decrypt and deserialize ;
 //		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
 		
 		try {
@@ -203,5 +203,17 @@ public class OrchWebSocket {
 
 	public void postToOrcController(SessionMapper sessionMapper, TFSDataModel tfsDataMode) { 
 		TFSContextBridge.getTFSOrchController().processSTTResponse(sessionMapper, tfsDataMode);
+	}
+	
+	public static void disconnectSTT(String agentId) {
+		logger.info("Disconnecting STT session for agent " + agentId);
+		SessionMapper sessionMapper = clientsMap.get(agentId);
+		if (sessionMapper != null && sessionMapper.getSpeechToTextWs() != null) {
+			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
+			sttSession.stopAction();
+			logger.info("Disconnected STT session for agent " + agentId);
+		} else {
+			logger.info("STT Session does not exist for agent " + agentId);
+		}
 	}
 }
