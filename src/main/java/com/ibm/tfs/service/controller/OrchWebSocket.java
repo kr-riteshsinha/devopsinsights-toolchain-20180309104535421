@@ -210,7 +210,15 @@ public class OrchWebSocket {
 		SessionMapper sessionMapper = clientsMap.get(agentId);
 		if (sessionMapper != null && sessionMapper.getSpeechToTextWs() != null) {
 			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
+			logger.info("Sending STOP Action to STT...");
 			sttSession.stopAction();
+			logger.info("Disconnecting WebSocket session...");
+			try {
+				sessionMapper.getWsSession().close();
+			} catch (IOException e) {
+				logger.error("Error while disconnecting WebSocket session...");
+				e.printStackTrace();
+			}
 			logger.info("Disconnected STT session for agent " + agentId);
 		} else {
 			logger.info("STT Session does not exist for agent " + agentId);

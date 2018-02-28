@@ -9,7 +9,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import com.ibm.tfs.service.controller.TFSWebSocketUpgradeHandler;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
 import com.ning.http.client.AsyncHttpClient;
@@ -168,8 +167,9 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
     private void connect(String endpointURI, final String username, final String password) throws Exception {
     	String apikey = new String(Base64.encodeBase64((username + ":" + password).getBytes()));
     	
+    	AsyncHttpClient client = null;
 		try {
-			AsyncHttpClient client = getAsyncHttpClient(endpointURI);
+			client = getAsyncHttpClient(endpointURI);
 
 		    AsyncHttpClient.BoundRequestBuilder requestBuilder = client.prepareGet(endpointURI)
 	                .addHeader(HttpHeaders.Names.AUTHORIZATION, "Basic " + apikey)
@@ -178,9 +178,8 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	                .setRequestTimeout(REQUEST_TIMEOUT);
 		    System.err.println("DEBUG: SENDING TIMEOUT: " + this.REQUEST_TIMEOUT);
 		    
-		    // get() waits for the computation to complete, and then retrieves its result. 
+		    // get() waits for the computation to complete, and then retrieves its result.
 		    _socket = requestBuilder.execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(this).build()).get();
-//		    _socket = requestBuilder.execute(new TFSWebSocketUpgradeHandler.Builder().addWebSocketListener(this).build()).get();
 		    _status = WEBSOCKET_OPEN_STATUS;
 		    _isConnectionReset = true;
 		    
@@ -190,6 +189,10 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw(e);
+		} finally {
+			if (client != null) {
+				client.close();
+			}
 		}
     }
     
