@@ -167,9 +167,8 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
     private void connect(String endpointURI, final String username, final String password) throws Exception {
     	String apikey = new String(Base64.encodeBase64((username + ":" + password).getBytes()));
     	
-    	AsyncHttpClient client = null;
 		try {
-			client = getAsyncHttpClient(endpointURI);
+			AsyncHttpClient client = getAsyncHttpClient(endpointURI);
 
 		    AsyncHttpClient.BoundRequestBuilder requestBuilder = client.prepareGet(endpointURI)
 	                .addHeader(HttpHeaders.Names.AUTHORIZATION, "Basic " + apikey)
@@ -189,10 +188,6 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw(e);
-		} finally {
-			if (client != null) {
-				client.close();
-			}
 		}
     }
     
