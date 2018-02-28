@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
@@ -27,10 +28,12 @@ import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
 import com.ibm.utility.ObjectConverter;
+import com.ibm.utility.WavEncoderStream;
 
 @Service("orchWebSocket")
 @ServerEndpoint("/websocketbinary")
 public class OrchWebSocket {
+
 
 	private static Map<String, SessionMapper> clientsMap = Collections
 			.synchronizedMap(new HashMap<String, SessionMapper>());
@@ -43,7 +46,7 @@ public class OrchWebSocket {
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
 	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
-	private static   int sessionCount = 0;
+	private AtomicInteger sessionCount = new AtomicInteger(0);
 
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
@@ -54,9 +57,9 @@ public class OrchWebSocket {
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
 		// Get session and WebSocket connection
-		sessionCount++;
-		logger.info("no of session open : " + sessionCount);
-		System.out.println("no of session open : " + sessionCount);
+		//sessionCount.getAndIncrement();
+		logger.info("no of session open : " + sessionCount.getAndIncrement());
+		System.out.println("no of session open : " + sessionCount.get());
 	}
 
 	@OnMessage
@@ -101,9 +104,9 @@ public class OrchWebSocket {
 			urlBuilder.append(ACOUSTINCCUSTOMIZATIONID + "=" + tfsConfig.getAcousticCustomizationID());
 		}
 
-//		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
-//			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
-//		}
+		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
+			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
+		}
 
 		if (!StringUtils.isBlank(tfsConfig.getWatsonLearningOptout())) {
 			urlBuilder.append(WATSON_LEARNING_OPT_OUT + "=" + tfsConfig.getWatsonLearningOptout());
@@ -115,6 +118,8 @@ public class OrchWebSocket {
 		sttparam.word_confidence = BooleanUtils.toBoolean(tfsConfig.getWordConfidence());
 		sttparam.max_alternatives = NumberUtils.toInt(tfsConfig.getMax_alternatives());
 		sttparam.timestamps = BooleanUtils.toBoolean(tfsConfig.getTimestamp());
+		sttparam.speaker_labels = BooleanUtils.toBoolean(tfsConfig.getSpeakerLabel());
+		sttparam.content_type =  tfsConfig.getContent_type();
 
 		return urlBuilder.toString();
 	}
@@ -127,7 +132,8 @@ public class OrchWebSocket {
 //		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
 		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
 		SessionMapper sessionMapper = new SessionMapper();
-
+		WavEncoderStream stream = new WavEncoderStream("C:\\audioStore\\"+model.getAgentId()+".wav", 16000, 2, 1);
+		stream.write(model.getSttRequest());
 		if (clientsMap.get(model.getAgentId()) == null) {
 			logger.info("New Agent Id registerd " + model.getAgentId());
 
@@ -152,7 +158,7 @@ public class OrchWebSocket {
 			sessionMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			clientsMap.put(model.getAgentId(), sessionMapper);
 		} else {
-			logger.info("Agent Id already registerd " + model.getAgentId());
+			logger.debug("Agent Id already registerd " + model.getAgentId());
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			existingMapper.setWsSession(session);
@@ -186,8 +192,9 @@ public class OrchWebSocket {
 	@OnClose
 	public void onClose(Session session) throws IOException {
 		// WebSocket connection closes
-		System.out.println("session closed");
-		logger.info("session closed");
+		int count = sessionCount.getAndIncrement();
+		System.out.println("session closed "+count);
+		logger.info("session closed" +count);
 	}
 
 	@OnError
@@ -203,5 +210,16 @@ public class OrchWebSocket {
 
 	public void postToOrcController(SessionMapper sessionMapper, TFSDataModel tfsDataMode) { 
 		TFSContextBridge.getTFSOrchController().processSTTResponse(sessionMapper, tfsDataMode);
+	}	
+	public static void disconnectSTT(String agentId) {
+		logger.info("Disconnecting STT session for agent " + agentId);
+		SessionMapper sessionMapper = clientsMap.get(agentId);
+		if (sessionMapper != null && sessionMapper.getSpeechToTextWs() != null) {
+			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
+			sttSession.stopAction();
+			logger.info("Disconnected STT session for agent " + agentId);
+		} else {
+			logger.info("STT Session does not exist for agent " + agentId);
+		}
 	}
 }
