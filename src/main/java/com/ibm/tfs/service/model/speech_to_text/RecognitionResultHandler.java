@@ -176,7 +176,7 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 				
 				if(agentVoice != null || builder != null) {
 					conutineConverstation.add("Speaker"+ oldSpeaker+": "+agentVoice);
-					logger.debug("agentVoice is more than 10 words" +agentVoice);
+					logger.debug("agentVoice is more than 10 words " +agentVoice);
 					this._transcript.setSttResponse(operatorVoice);
 					_messageHandler.handleMessage(this._transcript);
 					agentVoice = builder.toString();
