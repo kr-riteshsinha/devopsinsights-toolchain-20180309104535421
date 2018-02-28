@@ -51,7 +51,7 @@ public class TFSOrchWDSService {
 			QueryOptions.Builder queryOptions = new QueryOptions.Builder(environmentId, collectionId);
 			queryOptions.addReturnField("id").addReturnField("result_metadata").addReturnField("metadata");
 			queryOptions.count(1);
-			queryOptions.query(tfsDataModel.getWdsRequest());
+			queryOptions.naturalLanguageQuery(tfsDataModel.getWdsRequest());
 
 			logger.info("Sending the quey to discovery");
 			startTime = new Date().getTime();

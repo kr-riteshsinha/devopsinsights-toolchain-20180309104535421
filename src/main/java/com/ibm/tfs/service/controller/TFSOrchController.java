@@ -65,7 +65,7 @@ public class TFSOrchController {
 	 * 
 	 * @return
 	 */
-	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId:.+}", method = RequestMethod.PUT)
 	public String disconnectSession(@PathVariable("agentId") String agentId) {
 		logger.info("TFS Orchestration Service - disconnect session!");
 		String response = null;
