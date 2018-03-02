@@ -28,9 +28,9 @@ import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
 import com.ibm.utility.ObjectConverter;
 
-@Service("orchWebSocket")
-@ServerEndpoint("/tfsOrchService/websocketbinary")
-public class OrchWebSocket {
+@Service("orchWebSocketTest")
+@ServerEndpoint("/websocketbinary")
+public class OrchWebSocket2 {
 
 	private static Map<String, SessionMapper> clientsMap = Collections
 			.synchronizedMap(new HashMap<String, SessionMapper>());
@@ -42,7 +42,7 @@ public class OrchWebSocket {
 	private SpeectToTextWs.DefaultParams sttparam = new SpeectToTextWs.DefaultParams();
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
-	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket2.class.getName());
 	private static   int sessionCount = 0;
 
 	private TFSConfig getTFSConfig() {
@@ -124,7 +124,7 @@ public class OrchWebSocket {
 //		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
 		
 		try {
-//		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
+//		TFSDataModel model = EncryptionUtility.getInstance().decrypt(sealedObj);
 		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
 		SessionMapper sessionMapper = new SessionMapper();
 
