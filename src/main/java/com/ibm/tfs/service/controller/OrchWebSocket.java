@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.crypto.SealedObject;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -26,6 +28,7 @@ import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
+import com.ibm.utility.EncryptionUtility;
 import com.ibm.utility.ObjectConverter;
 
 @Service("orchWebSocket")
@@ -43,8 +46,8 @@ public class OrchWebSocket {
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
 	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
-	private static   int sessionCount = 0;
-
+	//private static   int sessionCount = 0;
+	private AtomicInteger sessionCount = new AtomicInteger();
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
 	}
@@ -54,9 +57,9 @@ public class OrchWebSocket {
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
 		// Get session and WebSocket connection
-		sessionCount++;
-		logger.info("no of session open : " + sessionCount);
-		System.out.println("no of session open : " + sessionCount);
+		int count = sessionCount.getAndIncrement();
+		logger.info("no of session open : " + count);
+		System.out.println("no of session open : " + count);
 	}
 
 	@OnMessage
@@ -101,9 +104,9 @@ public class OrchWebSocket {
 			urlBuilder.append(ACOUSTINCCUSTOMIZATIONID + "=" + tfsConfig.getAcousticCustomizationID());
 		}
 
-//		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
-//			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
-//		}
+		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
+			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
+		}
 
 		if (!StringUtils.isBlank(tfsConfig.getWatsonLearningOptout())) {
 			urlBuilder.append(WATSON_LEARNING_OPT_OUT + "=" + tfsConfig.getWatsonLearningOptout());
@@ -120,12 +123,13 @@ public class OrchWebSocket {
 	}
 
 	private void isValidSessionExist(Session session, byte[] b) {
-		// TODO : decrypt and deserialize ;
-//		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+		logger.info("OrchWebSocket.isValidSessionExist() - BEGIN");
+		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+		logger.info("sealedObj obtained");
 		
 		try {
-//		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
-		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
+		TFSDataModel model = EncryptionUtility.getInstance().decrypt(sealedObj);
+			logger.info("decrypyted TFSDataModel for agent id - " + model.getAgentId());
 		SessionMapper sessionMapper = new SessionMapper();
 
 		if (clientsMap.get(model.getAgentId()) == null) {
@@ -152,7 +156,7 @@ public class OrchWebSocket {
 			sessionMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			clientsMap.put(model.getAgentId(), sessionMapper);
 		} else {
-			logger.info("Agent Id already registerd " + model.getAgentId());
+			logger.debug("Agent Id already registerd " + model.getAgentId());
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			existingMapper.setWsSession(session);
@@ -185,9 +189,10 @@ public class OrchWebSocket {
 
 	@OnClose
 	public void onClose(Session session) throws IOException {
+		int count = sessionCount.decrementAndGet();
 		// WebSocket connection closes
-		System.out.println("session closed");
-		logger.info("session closed");
+		System.out.println("session closed. " + count);
+		logger.info("session closed "+count);
 	}
 
 	@OnError

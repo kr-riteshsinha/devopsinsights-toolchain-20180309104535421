@@ -101,7 +101,8 @@ public class EncryptionUtility {
 
 		this.c.init(Cipher.ENCRYPT_MODE, this.key, this.IV, this.r);
 		// Encrypt packet
-		SealedObject so = new SealedObject(tfsdata, this.c);
+//		SealedObject so = new SealedObject(tfsdata, this.c);
+		SealedObject so = new SealedObject(this.c.doFinal(tfsdata), this.c);
 		return so;
 
 	}
@@ -114,7 +115,7 @@ public class EncryptionUtility {
 
 		this.c.init(Cipher.DECRYPT_MODE, this.key, this.IV);
 
-		byte[] decryptedModel = (byte[]) sealedObject.getObject(this.c);
+		byte[] decryptedModel = this.c.doFinal((byte[]) sealedObject.getObject(this.c));
 		TFSDataModel tfsData = (TFSDataModel) ObjectConverter.deserialize(decryptedModel);
 
 		return tfsData;
