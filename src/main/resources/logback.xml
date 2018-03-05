@@ -21,9 +21,9 @@
 	</appender> -->
 	
 	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-	    <file>logs/SystemOut.log</file>
+	    <file>logs/tfsOrch.log</file>
 	    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-	        <fileNamePattern>logs/SystemOut.%d{yyyy-MM-dd}.log</fileNamePattern>
+	        <fileNamePattern>logs/tfsOrch.%d{yyyy-MM-dd}.log</fileNamePattern>
 	        <maxHistory>30</maxHistory>
 	        <totalSizeCap>1MB</totalSizeCap>
 	    </rollingPolicy>
