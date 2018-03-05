@@ -123,7 +123,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		System.out.println("on open" + arg0);
 		
 	}
-
+	
 	@Override
 	public void onMessage(String msg) {
 		System.out.println("on message "+msg);
@@ -177,7 +177,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	                .setRequestTimeout(REQUEST_TIMEOUT);
 		    System.err.println("DEBUG: SENDING TIMEOUT: " + this.REQUEST_TIMEOUT);
 		    
-		    // get() waits for the computation to complete, and then retrieves its result. 
+		    // get() waits for the computation to complete, and then retrieves its result.
 		    _socket = requestBuilder.execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(this).build()).get();
 		    _status = WEBSOCKET_OPEN_STATUS;
 		    _isConnectionReset = true;
@@ -222,4 +222,10 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		
 		resultHandler = handler;
 	}
+	
+	public void stopAction() {
+		_socket.sendMessage("{\"action\":\"stop\"}");
+	}
+	
+	
 }

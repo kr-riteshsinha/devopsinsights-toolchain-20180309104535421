@@ -37,7 +37,7 @@ public class TFSOrchController {
 
 	private static final Logger logger = LoggerFactory.getLogger(TFSOrchController.class.getName());
 
-	// Map to maintain the session for a single call, map of AgentId-WCSContext
+	// Map to maintain the session for a single call, map of AgentId-CallContext
 	private static Map<String, CallContext> sessionMap = new ConcurrentHashMap<>();
 
 	@Autowired
@@ -65,30 +65,37 @@ public class TFSOrchController {
 	 * 
 	 * @return
 	 */
-	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/tfsOrchService/disconnect/{agentId:.+}", method = RequestMethod.PUT)
 	public String disconnectSession(@PathVariable("agentId") String agentId) {
 		logger.info("TFS Orchestration Service - disconnect session!");
 		String response = null;
-		String responseMessage;
+
+		// disconnect the STT session for the given agent
+		OrchWebSocket.disconnectSTT(agentId);
+
 		TFSDataModel dataModel = new TFSDataModel();
 		dataModel.setAgentId(agentId);
-		
+
+		// remove the call session for given agent
 		CallContext callContext = sessionMap.remove(agentId);
-		
+
 		if (callContext == null) {
-			responseMessage = "There was no session associated with the Agent Id " + agentId;
-			dataModel.setResponseMessage(responseMessage);
+			logger.info("Call session does not exist for agent " + agentId);
+			dataModel.setResponseMessage("Call session does not exist for agent " + agentId);
 		} else {
+			logger.info("Disconnecting call session for agent " + agentId);
 			long endTime = new Date().getTime();
 			long callDuration = endTime - callContext.getCallStartTime();
-			responseMessage = "The session associated with the Agent Id " + agentId + " has been removed. The call duration (in milliseconds) was - " + callDuration;
-			
-			dataModel.setResponseMessage(responseMessage);
+
+			logger.info(
+			        "Disconnected call session for agent " + agentId + ". The call duration (in milliseconds) was - " + callDuration);
+			dataModel.setResponseMessage(
+			        "Disconnected call session for agent " + agentId + ". The call duration (in milliseconds) was - " + callDuration);
 			dataModel.setCallStartTime(String.valueOf(callContext.getCallStartTime()));
 			dataModel.setCallEndTime(String.valueOf(endTime));
 			dataModel.setCallDurationTime(String.valueOf(callDuration));
 		}
-		
+
 		response = dataModel.toString();
 
 		return response;
@@ -185,7 +192,7 @@ public class TFSOrchController {
 	 */
 	@Async
 	@Transactional
-	public void processSTTResponse(SessionMapper sessionMapper, TFSDataModel mediationTfsDataModel) {
+	public synchronized void processSTTResponse(SessionMapper sessionMapper, TFSDataModel mediationTfsDataModel) {
 
 		logger.info("TFSOrchController.processSTTResponse - begin");
 		Context context = null;
