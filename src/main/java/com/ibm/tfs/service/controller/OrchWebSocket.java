@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.crypto.SealedObject;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -27,13 +28,12 @@ import com.ibm.tfs.service.config.TFSConfig;
 import com.ibm.tfs.service.model.SessionMapper;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
+import com.ibm.utility.EncryptionUtility;
 import com.ibm.utility.ObjectConverter;
-import com.ibm.utility.WavEncoderStream;
 
 @Service("orchWebSocket")
 @ServerEndpoint("/tfsOrchService/websocketbinary")
 public class OrchWebSocket {
-
 
 	private static Map<String, SessionMapper> clientsMap = Collections
 			.synchronizedMap(new HashMap<String, SessionMapper>());
@@ -46,8 +46,8 @@ public class OrchWebSocket {
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
 	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
-	private AtomicInteger sessionCount = new AtomicInteger(0);
-
+	//private static   int sessionCount = 0;
+	private AtomicInteger sessionCount = new AtomicInteger();
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
 	}
@@ -57,9 +57,9 @@ public class OrchWebSocket {
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
 		// Get session and WebSocket connection
-		//sessionCount.getAndIncrement();
-		logger.info("no of session open : " + sessionCount.getAndIncrement());
-		System.out.println("no of session open : " + sessionCount.get());
+		int count = sessionCount.getAndIncrement();
+		logger.info("no of session open : " + count);
+		System.out.println("no of session open : " + count);
 	}
 
 	@OnMessage
@@ -118,22 +118,20 @@ public class OrchWebSocket {
 		sttparam.word_confidence = BooleanUtils.toBoolean(tfsConfig.getWordConfidence());
 		sttparam.max_alternatives = NumberUtils.toInt(tfsConfig.getMax_alternatives());
 		sttparam.timestamps = BooleanUtils.toBoolean(tfsConfig.getTimestamp());
-		sttparam.speaker_labels = BooleanUtils.toBoolean(tfsConfig.getSpeakerLabel());
-		sttparam.content_type =  tfsConfig.getContent_type();
 
 		return urlBuilder.toString();
 	}
 
 	private void isValidSessionExist(Session session, byte[] b) {
-		// TODO : decrypt and deserialize ;
-//		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+		logger.info("OrchWebSocket.isValidSessionExist() - BEGIN");
+		SealedObject sealedObj = (SealedObject) ObjectConverter.deserialize(b);
+		logger.info("sealedObj obtained");
 		
 		try {
-//		TFSDataModel decryptModel = EncryptionUtility.getInstance().decrypt(sealedObj);
-		TFSDataModel model = (TFSDataModel) ObjectConverter.deserialize(b);
+		TFSDataModel model = EncryptionUtility.getInstance().decrypt(sealedObj);
+			logger.info("decrypyted TFSDataModel for agent id - " + model.getAgentId());
 		SessionMapper sessionMapper = new SessionMapper();
-		WavEncoderStream stream = new WavEncoderStream("C:\\audioStore\\"+model.getAgentId()+".wav", 16000, 2, 1);
-		stream.write(model.getSttRequest());
+
 		if (clientsMap.get(model.getAgentId()) == null) {
 			logger.info("New Agent Id registerd " + model.getAgentId());
 
@@ -191,10 +189,10 @@ public class OrchWebSocket {
 
 	@OnClose
 	public void onClose(Session session) throws IOException {
+		int count = sessionCount.decrementAndGet();
 		// WebSocket connection closes
-		int count = sessionCount.getAndIncrement();
-		System.out.println("session closed "+count);
-		logger.info("session closed" +count);
+		System.out.println("session closed. " + count);
+		logger.info("session closed "+count);
 	}
 
 	@OnError
@@ -210,17 +208,6 @@ public class OrchWebSocket {
 
 	public void postToOrcController(SessionMapper sessionMapper, TFSDataModel tfsDataMode) { 
 		TFSContextBridge.getTFSOrchController().processSTTResponse(sessionMapper, tfsDataMode);
-	}	
-	public static void disconnectSTT(String agentId) {
-		logger.info("Disconnecting STT session for agent " + agentId);
-		SessionMapper sessionMapper = clientsMap.get(agentId);
-		if (sessionMapper != null && sessionMapper.getSpeechToTextWs() != null) {
-			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
-			sttSession.stopAction();
-			logger.info("Disconnected STT session for agent " + agentId);
-		} else {
-			logger.info("STT Session does not exist for agent " + agentId);
-		}
 	}
 	
 	public static void disconnectSTT(String agentId) {
