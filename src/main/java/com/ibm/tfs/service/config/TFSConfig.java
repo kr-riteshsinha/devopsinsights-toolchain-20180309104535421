@@ -364,5 +364,31 @@ public class TFSConfig {
 
 	public void setScrubKey(String scrubKey) {
 		this.scrubKey = scrubKey;
-	} 	
+	}
+	
+	// Stt debug flag
+	
+	@Value("${tfs.orch.stt.audiofile.enable}")
+	private boolean isSTTDebugEnable;
+
+	@Value("${tfs.orch.stt.audiofile.fullpath}")
+	private String audioFilePath;
+	
+	public boolean isSTTDebugEnable() {
+		return isSTTDebugEnable;
+	}
+
+	public void setSTTDebugEnable(boolean isSTTDebugEnable) {
+		this.isSTTDebugEnable = isSTTDebugEnable;
+	}
+
+	public String getAudioFilePath() {
+		return audioFilePath;
+	}
+
+	public void setAudioFilePath(String audioFilePath) {
+		this.audioFilePath = audioFilePath;
+	}
+
+	
 }

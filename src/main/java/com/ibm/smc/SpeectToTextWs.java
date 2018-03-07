@@ -2,6 +2,7 @@ package com.ibm.smc;
 
 
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 
 import org.apache.commons.codec.binary.Base64;
@@ -11,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
+import com.ibm.utility.WavEncoderStream;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketCloseCodeReasonListener;
@@ -36,7 +38,6 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 		public boolean word_confidence = true;
 		public boolean smart_formatting = true;
 		public boolean speaker_labels = true;
-		public String customization_id = "14ed00ee-17ba-4320-85c9-d689d0614515";
 		//public String model="en-US_NarrowbandModel&x-watson-learning-opt-out=1&customization_id=14ed00ee-17ba-4320-85c9-d689d0614515";
 	};
 
@@ -47,7 +48,9 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	private String _endpointURI;
 	private String _username;
 	private String _password;
-
+	private boolean isAudioDebug = false;
+	private String audioFileFullPath = null;
+	
 	private Gson _gson = new Gson();
 	
 	public static String DefaultQuery = "x-watson-learning-opt-out=1";
@@ -61,11 +64,13 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	public final int MAX_CONNECT_RETRY = 1;
 	public final int CONNECTION_RETRY_WAIT_MSEC = 3000;
 
-	public SpeectToTextWs(String endpointURI, final String username, final String password,DefaultParams params) {
+	public SpeectToTextWs(String endpointURI, final String username, final String password,DefaultParams params,boolean isdebug,String audiofilePath) {
 		_params = params;
 		_endpointURI = endpointURI;
 		_username = username;
 		_password = password;
+		isAudioDebug = isdebug;
+		audioFileFullPath = audiofilePath;
     }
 
 	public SpeectToTextWs() {
@@ -107,6 +112,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	@Override
 	public void onClose(WebSocket arg0) {
 		// TODO Auto-generated method stub
+		_status = WEBSOCKET_CLOSED_STATUS;
 		System.out.println("On close "+ arg0);
 		
 	}
@@ -212,6 +218,17 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 
 		if (_socket != null) {
 			_socket.sendMessage(b);
+			//Do not enable this in production environment. This will create audio file and append the audio data after sending to STT
+			//Purpose of this is to check the audio quality sending to the STT.
+			if(isAudioDebug) {
+				try {
+					WavEncoderStream stream = new WavEncoderStream(audioFileFullPath, 16000, 2, 1);
+					stream.write(b);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			//_socket.sendMessage("wss://stream.watsonplatform.net/speech-to-text/api/v1/customizations?language=en-US");
 		}
 		

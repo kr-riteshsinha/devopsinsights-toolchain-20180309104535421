@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
@@ -40,10 +41,11 @@ public class OrchWebSocket2 {
 	private static final String ACOUSTINCCUSTOMIZATIONID = "&acoustic_customization_id";
 	private static final String WATSON_LEARNING_OPT_OUT = "&x-watson-learning-opt-out";
 	private SpeectToTextWs.DefaultParams sttparam = new SpeectToTextWs.DefaultParams();
+	
 	private TFSConfig tfsConfig;
 	Gson _gson = new Gson();
 	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket2.class.getName());
-	private static   int sessionCount = 0;
+	private static AtomicInteger sessionCount = new AtomicInteger();
 
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
@@ -54,9 +56,9 @@ public class OrchWebSocket2 {
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
 		// Get session and WebSocket connection
-		sessionCount++;
-		logger.info("no of session open : " + sessionCount);
-		System.out.println("no of session open : " + sessionCount);
+		int count = sessionCount.getAndIncrement();
+		logger.info("no of session open : " + count);
+		System.out.println("no of session open : " + count);
 	}
 
 	@OnMessage
@@ -65,13 +67,6 @@ public class OrchWebSocket2 {
 		logger.debug(jsonObject);
 		System.out.println("onMessage called with String parameter :" + jsonObject);
 		session.getBasicRemote().sendText(jsonObject);
-//		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
-//		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
-//
-//		byte[] b = model.getSttRequest();
-//		if (b != null) {
-//			onMessage(session, b);
-//		}
 	}
 
 	private byte[] convertBytetoVoiceByte(byte[] b) {
@@ -101,9 +96,9 @@ public class OrchWebSocket2 {
 			urlBuilder.append(ACOUSTINCCUSTOMIZATIONID + "=" + tfsConfig.getAcousticCustomizationID());
 		}
 
-//		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
-//			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
-//		}
+		if (!StringUtils.isBlank(tfsConfig.getCustomizationId())) {
+			urlBuilder.append(CUSTOMIZATIONID + "=" + tfsConfig.getCustomizationId());
+		}
 
 		if (!StringUtils.isBlank(tfsConfig.getWatsonLearningOptout())) {
 			urlBuilder.append(WATSON_LEARNING_OPT_OUT + "=" + tfsConfig.getWatsonLearningOptout());
@@ -134,8 +129,11 @@ public class OrchWebSocket2 {
 			sessionMapper.setDataModel(model);
 			sessionMapper.setWsSession(session);
 			speechToTextWs = new SpeectToTextWs(createSTTURL(), tfsConfig.getSttUsername(), tfsConfig.getSttPassword(),
-					sttparam);
+					sttparam,tfsConfig.isSTTDebugEnable(),tfsConfig.getAudioFilePath());
+			
 			RecognitionResultHandler msgHandler = new RecognitionResultHandler(model, tfsConfig.getMaxWrdBuffer());
+			sessionMapper.setResultHandler(msgHandler);
+			
 			msgHandler.addMessageHandler(new RecognitionResultHandler.MessageHandler() {
 				@Override
 				public void handleMessage(TFSDataModel model) {
@@ -152,7 +150,7 @@ public class OrchWebSocket2 {
 			sessionMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			clientsMap.put(model.getAgentId(), sessionMapper);
 		} else {
-			logger.info("Agent Id already registerd " + model.getAgentId());
+			logger.debug("Agent Id already registerd " + model.getAgentId());
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
 			existingMapper.setWsSession(session);
@@ -185,9 +183,10 @@ public class OrchWebSocket2 {
 
 	@OnClose
 	public void onClose(Session session) throws IOException {
+		int count = sessionCount.decrementAndGet();
 		// WebSocket connection closes
-		System.out.println("session closed");
-		logger.info("session closed");
+		System.out.println("session closed. " + count);
+		logger.info("session closed "+count);
 	}
 
 	@OnError
@@ -212,8 +211,13 @@ public class OrchWebSocket2 {
 			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
 			logger.info("Sending STOP Action to STT...");
 			sttSession.stopAction();
+			
+			logger.info("Reset the resultHandler to clear the buffer");
+			sessionMapper.getResultHandler().reset();
+			
 			logger.info("Disconnecting WebSocket session...");
 			try {
+				//TODO : Not sure why close websocket. This will close connection between SMC to orchestration. ??
 				sessionMapper.getWsSession().close();
 			} catch (IOException e) {
 				logger.error("Error while disconnecting WebSocket session...");

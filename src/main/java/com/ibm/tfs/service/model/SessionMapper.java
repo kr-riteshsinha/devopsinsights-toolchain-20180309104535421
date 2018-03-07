@@ -3,12 +3,14 @@ package com.ibm.tfs.service.model;
 import javax.websocket.Session;
 
 import com.ibm.smc.SpeectToTextWs;
+import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
 
 public class SessionMapper  {
 
 	private SpeectToTextWs speechToTextWs=null;
 	private TFSDataModel dataModel = null;
 	private Session wsSession = null;
+	private RecognitionResultHandler resultHandler;
 
 	public SpeectToTextWs getSpeechToTextWs() {
 		return speechToTextWs;
@@ -32,6 +34,14 @@ public class SessionMapper  {
 
 	public void setWsSession(Session session) {
 		wsSession = session;
+	}
+
+	public RecognitionResultHandler getResultHandler() {
+		return resultHandler;
+	}
+
+	public void setResultHandler(RecognitionResultHandler resultHandler) {
+		this.resultHandler = resultHandler;
 	}
 	
 }

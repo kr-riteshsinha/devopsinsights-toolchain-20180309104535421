@@ -30,6 +30,7 @@ import com.ibm.tfs.service.model.TFSDataModel;
 import com.ibm.tfs.service.model.speech_to_text.RecognitionResultHandler;
 import com.ibm.utility.EncryptionUtility;
 import com.ibm.utility.ObjectConverter;
+import com.ibm.utility.WavEncoderStream;
 
 @Service("orchWebSocket")
 @ServerEndpoint("/tfsOrchService/websocketbinary")
@@ -47,7 +48,7 @@ public class OrchWebSocket {
 	Gson _gson = new Gson();
 	private static final Logger logger = LoggerFactory.getLogger(OrchWebSocket.class.getName());
 	//private static   int sessionCount = 0;
-	private AtomicInteger sessionCount = new AtomicInteger();
+	private static AtomicInteger sessionCount = new AtomicInteger();
 	private TFSConfig getTFSConfig() {
 		return TFSContextBridge.getTFSConfigService().getTFSConfig();
 	}
@@ -68,13 +69,6 @@ public class OrchWebSocket {
 		logger.debug(jsonObject);
 		System.out.println("onMessage called with String parameter :" + jsonObject);
 		session.getBasicRemote().sendText(jsonObject);
-//		TFSDataModel model = _gson.fromJson(jsonObject, TFSDataModel.class);
-//		SessionMapper sessionMapper = clientsMap.get(model.getHostName());
-//
-//		byte[] b = model.getSttRequest();
-//		if (b != null) {
-//			onMessage(session, b);
-//		}
 	}
 
 	private byte[] convertBytetoVoiceByte(byte[] b) {
@@ -138,8 +132,11 @@ public class OrchWebSocket {
 			sessionMapper.setDataModel(model);
 			sessionMapper.setWsSession(session);
 			speechToTextWs = new SpeectToTextWs(createSTTURL(), tfsConfig.getSttUsername(), tfsConfig.getSttPassword(),
-					sttparam);
+					sttparam,tfsConfig.isSTTDebugEnable(),tfsConfig.getAudioFilePath());
+			
 			RecognitionResultHandler msgHandler = new RecognitionResultHandler(model, tfsConfig.getMaxWrdBuffer());
+			sessionMapper.setResultHandler(msgHandler);
+			
 			msgHandler.addMessageHandler(new RecognitionResultHandler.MessageHandler() {
 				@Override
 				public void handleMessage(TFSDataModel model) {
@@ -159,6 +156,12 @@ public class OrchWebSocket {
 			logger.debug("Agent Id already registerd " + model.getAgentId());
 			SessionMapper existingMapper = clientsMap.get(model.getAgentId());
 			existingMapper.getSpeechToTextWs().sendBinary(model.getSttRequest());
+			
+			// below will be used to check the quality of the audio coming from SpeechDriver utility.
+			if(tfsConfig.isSTTDebugEnable()) {
+				WavEncoderStream stream = new WavEncoderStream(tfsConfig.getAudioFilePath(), 16000, 2, 1);
+				stream.write(model.getSttRequest());
+			}
 			existingMapper.setWsSession(session);
 		}
 		
@@ -217,8 +220,12 @@ public class OrchWebSocket {
 			SpeectToTextWs sttSession = sessionMapper.getSpeechToTextWs();
 			logger.info("Sending STOP Action to STT...");
 			sttSession.stopAction();
+			
+			logger.info("Reset the resultHandler to clear the buffer");
+			sessionMapper.getResultHandler().reset();
 			logger.info("Disconnecting WebSocket session...");
 			try {
+				//TODO : Not sure why close websocket. This will close connection between SMC to orchestration. ??
 				sessionMapper.getWsSession().close();
 			} catch (IOException e) {
 				logger.error("Error while disconnecting WebSocket session...");

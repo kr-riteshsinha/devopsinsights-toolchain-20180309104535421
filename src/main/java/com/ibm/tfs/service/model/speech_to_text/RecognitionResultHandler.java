@@ -137,8 +137,28 @@ public class RecognitionResultHandler implements MessageHandlerEX {
 	}
 	
 	
-	private void reset() {
+	public void reset() {
+		
 	 // clean the buffer list
+		//logger.debug("continueConverstatio utterence are :" );
+		if(logger.isDebugEnabled()) {
+			logger.debug("agent voice list utterneces......... ");
+			for (String string : agentVoicelst) {
+				logger.debug(string);
+			}
+			
+			logger.debug("operator voice list utterneces....... ");
+			for (String string : operatorVoicelst) {
+				logger.debug(string);
+			}
+			
+			logger.debug("conutineConverstation list utterneces....... ");
+			for (String string : conutineConverstation) {
+				logger.debug(string);
+			}
+			
+		}
+		
 		this.conutineConverstation.clear();
 		this.agentVoice = null;
 		this.operatorVoice = null;
