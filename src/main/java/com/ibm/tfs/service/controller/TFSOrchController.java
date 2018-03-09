@@ -1,8 +1,10 @@
 package com.ibm.tfs.service.controller;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,6 +256,7 @@ public class TFSOrchController {
 			
 			logger.debug("response sent to "+ tfsDataModel.getAgentId());
 			logger.debug("TFSDataModel : " + tfsDataModel.toString());
+			
 			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
 
 			logger.info("TFSOrchController.processSTTResponse - end");
@@ -261,6 +264,12 @@ public class TFSOrchController {
 			logger.error(e.getMessage());
 			e.printStackTrace();
 			tfsDataModel.setResponseMessage(e.getMessage());
+			try {
+				sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
+			} catch (IOException e1) {
+				logger.error(e1.getMessage());
+				e1.printStackTrace();
+			}
 		}
 	}
 }

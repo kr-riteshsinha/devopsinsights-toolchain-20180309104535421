@@ -242,6 +242,7 @@ public class SpeectToTextWs implements WebSocketTextListener, WebSocketCloseCode
 	
 	public void stopAction() {
 		_socket.sendMessage("{\"action\":\"stop\"}");
+		_socket.close();
 	}
 	
 	
