@@ -163,7 +163,7 @@ public class OrchWebSocket2 {
 			try {
 				session.getBasicRemote().sendText(exceptionModel.toString());
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
+				logger.error(e1.getMessage());
 				e1.printStackTrace();
 			}
 		}

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,7 +253,7 @@ public class TFSOrchController {
 			// removing the WCS request data since it is duplicate of STT response
 			tfsDataModel.setWcsRequest(null);
 			
-			logger.debug("response sent to "+ tfsDataModel.getAgentId());
+			logger.debug("Response sent to "+ tfsDataModel.getAgentId());
 			logger.debug("TFSDataModel : " + tfsDataModel.toString());
 			
 			sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
@@ -264,6 +263,9 @@ public class TFSOrchController {
 			logger.error(e.getMessage());
 			e.printStackTrace();
 			tfsDataModel.setResponseMessage(e.getMessage());
+			
+			logger.debug("Error response sent to "+ tfsDataModel.getAgentId());
+			logger.debug("TFSDataModel : " + tfsDataModel.toString());
 			try {
 				sessionMapper.getWsSession().getBasicRemote().sendText(tfsDataModel.toString());
 			} catch (IOException e1) {

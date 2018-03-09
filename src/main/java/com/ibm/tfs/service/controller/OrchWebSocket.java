@@ -172,22 +172,11 @@ public class OrchWebSocket {
 			try {
 				session.getBasicRemote().sendText(exceptionModel.toString());
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
+				logger.error(e1.getMessage());
 				e1.printStackTrace();
 			}
 		}
 
-	}
-
-	public void sendResponse(TFSDataModel model) {
-		SessionMapper mapper = clientsMap.get(model.getAgentId());
-		try {
-			// WCS WDS
-			mapper.getWsSession().getBasicRemote().sendText(_gson.toJson(model));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	@OnClose
